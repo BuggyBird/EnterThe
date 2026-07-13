@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://h6qi7nrbui6k"]
+[ext_resource type="Script" path="res://tests/lamp_light_test.gd" id="1"]
+[node name="LampLightTest" type="Node2D"]
+script = ExtResource("1")
