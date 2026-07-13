@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://c0plr0treas001"]
+
+[ext_resource type="Script" path="res://procgen/room_def.gd" id="1"]
+[ext_resource type="Script" path="res://procgen/door_anchor.gd" id="2"]
+
+[node name="TreasureVault" type="Node2D"]
+script = ExtResource("1")
+category = 2
+room_size = Vector2(300, 240)
+
+[node name="Doors" type="Node2D" parent="."]
+
+[node name="Left" type="Marker2D" parent="Doors"]
+position = Vector2(-150, 0)
+script = ExtResource("2")
+direction = 2

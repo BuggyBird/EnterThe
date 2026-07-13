@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="44" viewBox="0 0 64 44">
+  <!-- Placeholder weapon silhouette, points +X (aim direction). White-ish so it
+       tints cleanly by each weapon's `color`. Swap per-weapon art in later. -->
+  <rect x="6" y="12" width="48" height="11" rx="2" fill="#dcdce6"/>
+  <rect x="52" y="13" width="7" height="9" rx="1" fill="#b9b9c6"/>
+  <rect x="12" y="20" width="12" height="20" rx="2" fill="#a8a8b6" transform="rotate(14 18 30)"/>
+  <path d="M24 22 a7 7 0 0 0 12 0" fill="none" stroke="#a8a8b6" stroke-width="3"/>
+</svg>

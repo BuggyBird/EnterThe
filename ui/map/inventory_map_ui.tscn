@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b1nvmap0ui001"]
+
+[ext_resource type="Script" path="res://ui/map/inventory_map_ui.gd" id="1"]
+
+[node name="InventoryMapUI" type="CanvasLayer"]
+script = ExtResource("1")

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RoomCatalog" load_steps=9 format=3 uid="uid://b0plr0catalog1"]
+
+[ext_resource type="Script" path="res://procgen/room_catalog.gd" id="1"]
+[ext_resource type="PackedScene" path="res://rooms/start/start_hall.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://rooms/combat/combat_cross.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://rooms/combat/combat_tall.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://rooms/combat/combat_wide.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://rooms/treasure/treasure_vault.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://rooms/shop/shop_nook.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://rooms/boss/boss_arena.tscn" id="8"]
+
+[resource]
+script = ExtResource("1")
+start = Array[PackedScene]([ExtResource("2")])
+combat = Array[PackedScene]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
+treasure = Array[PackedScene]([ExtResource("6")])
+shop = Array[PackedScene]([ExtResource("7")])
+boss = Array[PackedScene]([ExtResource("8")])

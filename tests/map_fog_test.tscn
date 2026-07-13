@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bwcweptjsdx41"]
+
+[ext_resource type="Script" path="res://tests/map_fog_test.gd" id="1"]
+
+[node name="MapFogTest" type="Node"]
+script = ExtResource("1")

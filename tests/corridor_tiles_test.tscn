@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bqhp5hv0dhg1k"]
+
+[ext_resource type="Script" path="res://tests/corridor_tiles_test.gd" id="1"]
+
+[node name="CorridorTilesTest" type="Node"]
+script = ExtResource("1")

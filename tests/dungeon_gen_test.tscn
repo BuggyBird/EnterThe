@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://xsvt0ertxtto"]
+
+[ext_resource type="Script" path="res://tests/dungeon_gen_test.gd" id="1"]
+
+[node name="DungeonGenTest" type="Node"]
+script = ExtResource("1")

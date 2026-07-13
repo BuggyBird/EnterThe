@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://xsvtwpc3f0to"]
+
+[ext_resource type="PackedScene" uid="uid://xsvudi8fjrtn" path="res://actors/player/player.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://c0plr0dummy001" path="res://actors/enemies/dummy/dummy.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://c0plr0whud0001" path="res://ui/hud/weapon_hud.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://c0plr0wpick001" path="res://weapons/pickup/weapon_pickup.tscn" id="4"]
+[ext_resource type="Resource" path="res://weapons/data/gravedigger.tres" id="5"]
+[ext_resource type="Resource" path="res://weapons/data/wisp.tres" id="6"]
+[ext_resource type="Resource" path="res://weapons/data/bone_railbolt.tres" id="7"]
+
+[sub_resource type="RectangleShape2D" id="Wall_H"]
+size = Vector2(940, 20)
+
+[sub_resource type="RectangleShape2D" id="Wall_V"]
+size = Vector2(20, 540)
+
+[node name="TestArena" type="Node2D" unique_id=760244873]
+
+[node name="WeaponHUD" parent="." instance=ExtResource("3")]
+
+[node name="Floor" type="Polygon2D" parent="." unique_id=460514729]
+color = Color(0.09, 0.07, 0.12, 1)
+polygon = PackedVector2Array(-460, -270, 460, -270, 460, 270, -460, 270)
+
+[node name="Walls" type="StaticBody2D" parent="." unique_id=1199314046]
+
+[node name="Top" type="CollisionShape2D" parent="Walls" unique_id=1572236216]
+position = Vector2(0, -270)
+shape = SubResource("Wall_H")
+
+[node name="Bottom" type="CollisionShape2D" parent="Walls" unique_id=320437966]
+position = Vector2(0, 270)
+shape = SubResource("Wall_H")
+
+[node name="Left" type="CollisionShape2D" parent="Walls" unique_id=191820605]
+position = Vector2(-460, 0)
+shape = SubResource("Wall_V")
+
+[node name="Right" type="CollisionShape2D" parent="Walls" unique_id=980382726]
+position = Vector2(460, 0)
+shape = SubResource("Wall_V")
+
+[node name="Border" type="Line2D" parent="." unique_id=1505348288]
+points = PackedVector2Array(-460, -270, 460, -270, 460, 270, -460, 270)
+closed = true
+width = 3.0
+default_color = Color(0.6, 0.5, 0.25, 1)
+
+[node name="Player" parent="." unique_id=28679426 instance=ExtResource("1")]
+position = Vector2(-27, -111)
+
+[node name="Dummy" parent="." instance=ExtResource("2")]
+position = Vector2(220, -90)
+
+[node name="Dummy2" parent="." instance=ExtResource("2")]
+position = Vector2(280, 60)
+
+[node name="Dummy3" parent="." instance=ExtResource("2")]
+position = Vector2(120, 120)
+
+[node name="GravediggerPickup" parent="." instance=ExtResource("4")]
+position = Vector2(-220, -90)
+weapon_data = ExtResource("5")
+
+[node name="WispPickup" parent="." instance=ExtResource("4")]
+position = Vector2(-260, 60)
+weapon_data = ExtResource("6")
+
+[node name="RailboltPickup" parent="." instance=ExtResource("4")]
+position = Vector2(-140, 150)
+weapon_data = ExtResource("7")

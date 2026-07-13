@@ -1,0 +1,33 @@
+class_name WeaponData
+extends Resource
+## Pure data defining a weapon. This is the core of the "collect hundreds of
+## guns" design: a new weapon is a new .tres file — no code. A runtime Weapon
+## node reads these numbers to fire; a WeaponHolder carries several of them.
+##
+## `tags` feed the synergy system later (Milestone 6): e.g. an item that boosts
+## all weapons tagged &"spectral", or a combo that triggers on &"pierce".
+
+@export var id: StringName = &""
+@export var display_name: String = "Unnamed Weapon"
+@export_multiline var description: String = ""
+
+@export_group("Projectile")
+@export var projectile_scene: PackedScene
+@export var projectile_data: ProjectileData
+
+@export_group("Firing")
+@export var fire_rate: float = 7.0        ## Shots per second.
+@export var auto: bool = true             ## Hold to fire vs. one shot per click.
+@export var pellets: int = 1              ## Projectiles per shot (>1 = shotgun).
+@export var spread_degrees: float = 0.0   ## Total scatter cone for the pellets.
+
+@export_group("Ammo")
+@export var mag_size: int = 12            ## Shots per clip before reloading.
+@export var reload_time: float = 1.0      ## Seconds to reload.
+@export var max_reserve: int = -1         ## Reserve ammo pool; -1 = infinite.
+
+@export_group("Identity")
+@export var color: Color = Color.WHITE    ## Placeholder tint (projectiles/pickup/held sprite).
+@export var sprite: Texture2D             ## In-hand weapon image (tinted by `color`).
+@export var sprite_scale: float = 1.0     ## Per-weapon size multiplier for the held sprite.
+@export var tags: Array[StringName] = []  ## For synergies (e.g. &"bullet", &"pierce").

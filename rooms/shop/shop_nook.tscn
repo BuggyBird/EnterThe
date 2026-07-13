@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://c0plr0shop0001"]
+
+[ext_resource type="Script" path="res://procgen/room_def.gd" id="1"]
+[ext_resource type="Script" path="res://procgen/door_anchor.gd" id="2"]
+
+[node name="ShopNook" type="Node2D"]
+script = ExtResource("1")
+category = 3
+room_size = Vector2(340, 260)
+
+[node name="Doors" type="Node2D" parent="."]
+
+[node name="Up" type="Marker2D" parent="Doors"]
+position = Vector2(0, -130)
+script = ExtResource("2")
+direction = 0

@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://b0plr0aimlas1"]
+[ext_resource type="Script" path="res://tests/aim_laser_test.gd" id="1"]
+[node name="AimLaserTest" type="Node"]
+script = ExtResource("1")

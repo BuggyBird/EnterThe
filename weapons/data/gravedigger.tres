@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://xsvukepp1eto"]
+
+[ext_resource type="Script" uid="uid://uwq53jdyrq4g" path="res://systems/weapon_data.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://xsvudpmy50to" path="res://projectiles/projectile.tscn" id="2"]
+[ext_resource type="Resource" uid="uid://xsvudcj1jtto" path="res://projectiles/data/pellet.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://cmft8xo6dcrl5" path="res://Assets/weapons/placeholder_weapon.svg" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"gravedigger"
+display_name = "Gravedigger"
+description = "A rusted funeral shotgun. Buries whatever stands too close."
+projectile_scene = ExtResource("2")
+projectile_data = ExtResource("3")
+fire_rate = 1.6
+auto = false
+pellets = 6
+spread_degrees = 34.0
+mag_size = 5
+reload_time = 1.6
+max_reserve = 40
+color = Color(1, 0.6, 0.25, 1)
+sprite = ExtResource("4")
+tags = Array[StringName]([&"bullet", &"spread"])

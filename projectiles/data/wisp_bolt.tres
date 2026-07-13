@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ProjectileData" format=3 uid="uid://xsvukgq550to"]
+
+[ext_resource type="Script" uid="uid://c1mk0t0kxhusl" path="res://systems/projectile_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+speed = 720.0
+lifetime = 0.85
+damage = 4.0
+knockback = 45.0
+radius = 3.0
+color = Color(0.55, 1, 0.7, 1)
