@@ -295,5 +295,6 @@ func set_invulnerable(value: bool) -> void:
 
 
 func _on_died() -> void:
-	# Placeholder until the game-over flow exists (meta milestone).
-	print("Player died.")
+	# Run over: back to the spawn hub to start the next one. Deferred — died can
+	# fire mid-physics (damage processing).
+	get_tree().change_scene_to_file.call_deferred("res://game/hub/hub_area.tscn")

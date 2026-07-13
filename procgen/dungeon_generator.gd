@@ -32,7 +32,10 @@ const CORRIDOR_LENGTHS: Array[float] = [96.0, 160.0, 224.0]
 ## outward axis but on a cell CENTRE across it; a half-tile-offset leg is exactly
 ## what maps one convention onto the perpendicular leg's, keeping the elbow's
 ## channel rects on the tile grid.
-const CORRIDOR_ELBOW_LENGTHS: Array[float] = [88.0, 152.0, 216.0]
+## Legs must be long enough that the two rooms of an L-connection clear each
+## other diagonally — rooms' reserved footprints cover their full painted art, so
+## short legs (88px) almost never fit and floors degenerate to straight-only.
+const CORRIDOR_ELBOW_LENGTHS: Array[float] = [152.0, 216.0, 280.0, 344.0]
 const ELBOW_CHANCE := 0.6    ## Odds a corridor tries to turn once before running straight.
 
 

@@ -185,10 +185,16 @@ func _build_rooms(result: DungeonGenerator.Result) -> void:
 		room.position = placed.position
 		add_child(room)
 		_spawned.append(room)
+		var art_rect: Rect2 = room.art_rect_local()
 		_map_rooms.append({
 			"node": room,
 			"rect": Rect2(placed.position - placed.template.size * 0.5, placed.template.size),
 			"type": placed.type,
+			# Tight bounds of the room's actual painted art (asymmetric), for
+			# clipping corridor walls. The symmetrized "rect" overshoots offset
+			# art on one side, and clipping by it would leave corridors unwalled
+			# there — an open path into the void.
+			"clip": Rect2(art_rect.position + placed.position, art_rect.size),
 		})
 
 
@@ -282,7 +288,7 @@ func _build_corridor_walls(node: Node2D, corridor: DungeonGenerator.Corridor,
 
 	var body := StaticBody2D.new()
 	node.add_child(body)
-	for strip in _merge_cell_rows(walls):
+	for strip in merge_cell_rows(walls):
 		var shape := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = strip.size
@@ -307,7 +313,7 @@ func _paint_corridor_walls(parent: Node2D, cells: Dictionary, walls: Dictionary)
 	tml.tile_set = corridor_tileset
 	tml.collision_enabled = false
 	for cell: Vector2i in walls:
-		var atlas := _wall_tile_for(cell, cells)
+		var atlas := wall_tile_for(cell, cells)
 		tml.set_cell(cell, floor_source_id, atlas)
 		# Tall wall: cap the face row, unless something else already owns that cell.
 		var above := cell + Vector2i.UP
@@ -317,20 +323,21 @@ func _paint_corridor_walls(parent: Node2D, cells: Dictionary, walls: Dictionary)
 	parent.add_child(tml)
 
 
-## Whether a world grid cell's centre lies within any placed room's footprint
-## (the rect already covers the room's full painted art, not just room_size).
+## Whether a world grid cell's centre lies within any placed room's painted art
+## (the tight per-room "clip" rect — see _build_rooms). Inside it, the room's own
+## tiles carry walls and collision; outside it, the corridor must enclose itself.
 func _inside_any_room(cell: Vector2i) -> bool:
 	var center := (Vector2(cell) + Vector2(0.5, 0.5)) * CELL
 	for room in _map_rooms:
-		if (room["rect"] as Rect2).has_point(center):
+		if (room["clip"] as Rect2).has_point(center):
 			return true
 	return false
 
 
-## The art tile for one corridor wall cell, from the direction of the adjacent
-## channel floor. Orthogonal contact wins (faces/columns); diagonal-only contact
-## means the cell is the outer corner of an elbow.
-func _wall_tile_for(cell: Vector2i, floor_cells: Dictionary) -> Vector2i:
+## The art tile for one wall cell, from the direction of the adjacent floor.
+## Orthogonal contact wins (faces/columns); diagonal-only contact means the cell
+## is an outer corner. Static so the hub area can dress its walls the same way.
+static func wall_tile_for(cell: Vector2i, floor_cells: Dictionary) -> Vector2i:
 	if floor_cells.has(cell + Vector2i.DOWN):
 		return WALL_ABOVE
 	if floor_cells.has(cell + Vector2i.UP):
@@ -349,7 +356,8 @@ func _wall_tile_for(cell: Vector2i, floor_cells: Dictionary) -> Vector2i:
 
 
 ## Merge a set of grid cells into one Rect2 (world px) per horizontal run.
-func _merge_cell_rows(cell_set: Dictionary) -> Array[Rect2]:
+## Static so the hub area can build its wall collision the same way.
+static func merge_cell_rows(cell_set: Dictionary) -> Array[Rect2]:
 	var keys: Array = cell_set.keys()
 	keys.sort_custom(func(u: Vector2i, v: Vector2i) -> bool:
 		return u.y < v.y or (u.y == v.y and u.x < v.x))
