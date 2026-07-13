@@ -55,6 +55,8 @@ func _build_ui() -> void:
 	_title.add_theme_font_override("font", DISPLAY_FONT)
 	_title.add_theme_font_size_override("font_size", 34)
 	_title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
+	_title.add_theme_color_override("font_outline_color", Color(0.03, 0.02, 0.06))
+	_title.add_theme_constant_override("outline_size", 4)
 	column.add_child(_title)
 
 	_cards_box = HBoxContainer.new()
@@ -136,21 +138,26 @@ func _build_content(def: Dictionary, rarity: int, color: Color) -> Control:
 	content.offset_bottom = -CONTENT_INSET.y
 
 	content.add_child(_card_label(Upgrades.RARITY_NAMES[rarity].to_upper(), 11, color))
-	content.add_child(_card_label(def["name"], 14, Color(0.96, 0.94, 0.99), true))
-	content.add_child(_card_label(def["desc"], 11, Color(0.82, 0.8, 0.88), true))
+	content.add_child(_card_label(def["name"], 15, Color(0.98, 0.96, 1.0), true))
+	content.add_child(_card_label(def["desc"], 12, Color(0.85, 0.83, 0.9), true))
 
 	var stacks: int = Upgrades.stacks_of(def["id"])
 	if stacks > 0:
-		content.add_child(_card_label("owned x%d" % stacks, 10, Color(0.6, 0.58, 0.68)))
+		content.add_child(_card_label("owned x%d" % stacks, 10, Color(0.65, 0.63, 0.72)))
 	return content
 
 
+## Card text must be READABLE above all: it uses the global theme font (Pixelify
+## Sans — pixel-styled but legible), with a dark outline lifting it off the frame
+## art. The blackletter face is reserved for big display headings.
 func _card_label(text: String, font_size: int, color: Color, wrap := false) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color(0.03, 0.02, 0.06, 0.9))
+	label.add_theme_constant_override("outline_size", 3)
 	if wrap:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return label

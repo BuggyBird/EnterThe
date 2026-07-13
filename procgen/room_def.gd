@@ -30,6 +30,15 @@ const WALL_CLEAR_DEPTH := 4                          ## Tiles floored inward fro
 const OUTWARD_ERASE_DEPTH := 6                       ## Tiles erased outward from the mouth — clears wall face + any trim/skirt rows crossing the corridor.
 const GATE_TILE := Vector2i(4, 26)                  ## Placeholder door tile; solid, so it seals when painted at the opening.
 
+## Animated door portals: every connected doorway is gated by a swirling
+## dimensional portal (3x2 sprite sheet). Base colour while passable, darkened
+## while the room is locked, removed for good once the player steps through.
+const PORTAL_TEXTURE_PATH := "res://Assets/Dimensional_Portal.png"
+const PORTAL_FRAME := Vector2i(32, 32)             ## Cell size of the 3x2 sheet.
+const PORTAL_FPS := 8.0
+const PORTAL_LOCKED_TINT := Color(0.42, 0.36, 0.55)   ## Dimmed swirl while sealed.
+const PORTAL_Z := 10                               ## Above floor + wall art.
+
 const DUMMY_SCENE := "res://actors/enemies/dummy/dummy.tscn"
 const PICKUP_SCENE := "res://weapons/pickup/weapon_pickup.tscn"
 const TREASURE_POOL := [
@@ -70,6 +79,8 @@ var is_discovered := false        ## True once the player has entered (room made
 var _tilemap_collision := false   ## True when an authored tilemap supplies wall collision.
 var _gate_map: TileMapLayer       ## The tilemap doors are painted onto (tiled rooms).
 var _gates: Array = []            ## Per used door: {"cells": Array[Vector2i], "tiles": Array[Vector2i]}.
+var _portals: Array = []          ## Animated portal (Node2D) per not-yet-crossed used door.
+var _doors_locked := false        ## Mirrors _set_doors_locked, guards portal removal.
 
 
 func _ready() -> void:
@@ -98,6 +109,7 @@ func _build() -> void:
 	is_cleared = type != DungeonGenerator.RoomType.COMBAT and type != DungeonGenerator.RoomType.BOSS
 	_tilemap_collision = _prepare_tilemap_collision()
 	_build_walls()
+	_build_portals()
 	_build_interior_detector()
 	_collect_spawn_points()
 	_hide_until_discovered()
@@ -286,6 +298,85 @@ func _all_descendants(node: Node) -> Array:
 		out.append(child)
 		out.append_array(_all_descendants(child))
 	return out
+
+
+# --- Door portals ---------------------------------------------------------------
+
+## One swirling portal per connected doorway, centred on the door mouth and turned
+## to span the opening (the art swirls in a tall ellipse, so top/bottom doors get
+## it sideways). A thin Area2D across the mouth detects the player stepping
+## through; a crossed portal has served its purpose and is removed for good.
+func _build_portals() -> void:
+	var frames := _portal_frames()
+	if frames == null:
+		return
+	for i in _used_exits:
+		var door: Dictionary = _exits[i]
+		var dir: Vector2i = door["dir"]
+		var root := Node2D.new()
+		root.name = "Portal"
+		root.add_to_group(&"door_portals")
+		root.position = door["pos"]
+		root.rotation = PI * 0.5 if dir.y != 0 else 0.0
+		root.z_index = PORTAL_Z
+
+		var sprite := AnimatedSprite2D.new()
+		sprite.sprite_frames = frames
+		sprite.scale = Vector2.ONE * (DOOR_WIDTH / float(PORTAL_FRAME.x))
+		root.add_child(sprite)
+
+		var area := Area2D.new()
+		area.collision_layer = 0
+		area.collision_mask = 2   # PlayerBody
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		# Local +x is the door's through-axis (rotation maps it for every wall):
+		# a thin slab across the opening, only crossable by actually passing it.
+		rect.size = Vector2(12.0, DOOR_WIDTH)
+		shape.shape = rect
+		area.add_child(shape)
+		root.add_child(area)
+		area.body_entered.connect(_on_portal_crossed.bind(root))
+
+		add_child(root)
+		_portals.append(root)
+		sprite.play(&"swirl")
+		# De-sync neighbouring portals so they don't all swirl in lockstep.
+		sprite.frame = RNG.randi_range(0, frames.get_frame_count(&"swirl") - 1)
+
+
+## The portal sheet sliced into a looping animation, built once and shared by
+## every room (the texture is a 3x2 grid of PORTAL_FRAME-sized cells).
+static var _portal_sprite_frames: SpriteFrames
+
+func _portal_frames() -> SpriteFrames:
+	if _portal_sprite_frames != null:
+		return _portal_sprite_frames
+	var tex: Texture2D = load(PORTAL_TEXTURE_PATH)
+	if tex == null:
+		return null
+	var frames := SpriteFrames.new()
+	frames.add_animation(&"swirl")
+	frames.set_animation_speed(&"swirl", PORTAL_FPS)
+	frames.set_animation_loop(&"swirl", true)
+	for r in int(tex.get_height()) / PORTAL_FRAME.y:
+		for c in int(tex.get_width()) / PORTAL_FRAME.x:
+			var cell := AtlasTexture.new()
+			cell.atlas = tex
+			cell.region = Rect2(Vector2(c * PORTAL_FRAME.x, r * PORTAL_FRAME.y), Vector2(PORTAL_FRAME))
+			frames.add_frame(&"swirl", cell)
+	_portal_sprite_frames = frames
+	return frames
+
+
+## The player stepped through an open portal — remove it. While the room is locked
+## the portals are sealed, and brushing one (e.g. from the corridor side against a
+## locked door) must not consume it.
+func _on_portal_crossed(body: Node2D, portal: Node2D) -> void:
+	if _doors_locked or not (body is Player):
+		return
+	_portals.erase(portal)
+	portal.queue_free()
 
 
 # --- Perimeter geometry -------------------------------------------------------
@@ -494,6 +585,12 @@ func _spawn_treasure() -> void:
 
 
 func _set_doors_locked(locked: bool) -> void:
+	_doors_locked = locked
+	# The portals mirror the lock state: dimmed while the fight seals the room,
+	# back to their base colour once it's cleared.
+	for portal in _portals:
+		if is_instance_valid(portal):
+			portal.modulate = PORTAL_LOCKED_TINT if locked else Color.WHITE
 	# Tiled rooms: seal each door by painting the gate cells solid (or clearing them
 	# back to floor). Same tilemap the walls live on, so it lines up exactly.
 	if _tilemap_collision:
