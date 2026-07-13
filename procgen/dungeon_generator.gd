@@ -12,8 +12,8 @@ extends RefCounted
 ## Algorithm (a simple "flow"):
 ##   1. Place a START room at the origin; its open doors seed the frontier.
 ##   2. Grow a body of COMBAT rooms: repeatedly pop an open door, try to fit a
-##      random combat template against it (aligned exit + straight corridor),
-##      rejecting placements that overlap anything already placed.
+##      random combat template against it (aligned exit + a straight or L-shaped
+##      corridor), rejecting placements that overlap anything already placed.
 ##   3. Graft the specials (BOSS, then TREASURE, then SHOP) onto the open doors
 ##      that are FARTHEST from start by room-graph distance.
 ##   4. Any door left open just stays solid wall.
@@ -24,7 +24,16 @@ enum RoomType { START, COMBAT, TREASURE, SHOP, BOSS }
 const DOOR_WIDTH := 48.0     ## 3 tiles. Must match RoomDef.DOOR_WIDTH and corridor width.
 const ROOM_MARGIN := 28.0    ## Empty gap kept between separate rooms/corridors.
 const PLACE_ATTEMPTS := 14   ## Candidate tries per open door before giving up on it.
-const CORRIDOR_LENGTHS: Array[float] = [64.0, 112.0, 160.0]  ## Multiples of 16 (tile grid).
+## Straight-corridor lengths: multiples of 16 (tile grid). The minimum must stay
+## comfortably >= RoomDef.OUTWARD_ERASE_DEPTH tiles so the door carve's outward
+## erasing always lands under the corridor floor.
+const CORRIDOR_LENGTHS: Array[float] = [96.0, 160.0, 224.0]
+## L-corridor leg lengths: 8 mod 16. A door mouth sits on a grid LINE along its
+## outward axis but on a cell CENTRE across it; a half-tile-offset leg is exactly
+## what maps one convention onto the perpendicular leg's, keeping the elbow's
+## channel rects on the tile grid.
+const CORRIDOR_ELBOW_LENGTHS: Array[float] = [88.0, 152.0, 216.0]
+const ELBOW_CHANCE := 0.6    ## Odds a corridor tries to turn once before running straight.
 
 
 ## One authored room's generation-relevant data. `scene` is carried opaquely (the
@@ -56,12 +65,39 @@ class PlacedRoom:
 	var neighbours: Array[int] = []   ## Indices of adjacent PlacedRooms (for BFS).
 
 
-## A straight, axis-aligned hallway between two door mouths.
+## An axis-aligned hallway between two door mouths: 2 points is a straight run,
+## 3 points is an L-shape with one turn. Points and leg lengths are chosen so every
+## channel rect corner lands on the 16px tile grid.
 class Corridor:
-	var a: Vector2   ## Mouth on the first room's wall.
-	var b: Vector2   ## Mouth on the second room's wall.
-	var dir: Vector2i
+	var points := PackedVector2Array()
 	var width: float = DOOR_WIDTH
+
+	var a: Vector2:   ## Mouth on the first room's wall.
+		get:
+			return points[0]
+	var b: Vector2:   ## Mouth on the second room's wall.
+		get:
+			return points[points.size() - 1]
+
+	## The walkable channel as one width-wide rect per segment. Ends that meet at an
+	## elbow are extended by half a width so consecutive rects cover the corner
+	## square between them; mouth ends stop exactly on the room's wall face.
+	func rects() -> Array[Rect2]:
+		var out: Array[Rect2] = []
+		var half := width * 0.5
+		for i in points.size() - 1:
+			var p := points[i]
+			var q := points[i + 1]
+			var d := (q - p).normalized()
+			if i > 0:
+				p -= d * half
+			if i < points.size() - 2:
+				q += d * half
+			var across := Vector2(absf(d.y), absf(d.x)) * half
+			var lo := Vector2(minf(p.x, q.x), minf(p.y, q.y)) - across
+			var hi := Vector2(maxf(p.x, q.x), maxf(p.y, q.y)) + across
+			out.append(Rect2(lo, hi - lo))
+		return out
 
 
 class Result:
@@ -125,23 +161,25 @@ func _try_attach(result: Result, door: Dictionary, pool: Array, room_type: int) 
 
 	for _attempt in PLACE_ATTEMPTS:
 		var tmpl: Template = pool[RNG.randi_range(0, pool.size() - 1)]
-		# Candidate must offer a door facing back at us (-da) for a straight corridor.
-		var opposite: Array[int] = []
-		for i in tmpl.exits.size():
-			if tmpl.exits[i].dir == -da:
-				opposite.append(i)
-		if opposite.is_empty():
+		# Roll a corridor shape, falling back to the other one when the candidate
+		# room has no door facing the right way for the rolled shape.
+		var plan := {}
+		if RNG.randf() < ELBOW_CHANCE:
+			plan = _plan_elbow(a_world, da, tmpl)
+			if plan.is_empty():
+				plan = _plan_straight(a_world, da, tmpl)
+		else:
+			plan = _plan_straight(a_world, da, tmpl)
+			if plan.is_empty():
+				plan = _plan_elbow(a_world, da, tmpl)
+		if plan.is_empty():
 			continue
-		var exit_b_index: int = opposite[RNG.randi_range(0, opposite.size() - 1)]
-		var exit_b: Exit = tmpl.exits[exit_b_index]
-		var length: float = CORRIDOR_LENGTHS[RNG.randi_range(0, CORRIDOR_LENGTHS.size() - 1)]
-		var b_world: Vector2 = a_world + Vector2(da) * length
-		var pos: Vector2 = b_world - exit_b.local_pos
+		var exit_b_index: int = plan["exit"]
+		var points: PackedVector2Array = plan["points"]
+		var pos: Vector2 = points[points.size() - 1] - tmpl.exits[exit_b_index].local_pos
 
 		var corridor := Corridor.new()
-		corridor.a = a_world
-		corridor.b = b_world
-		corridor.dir = da
+		corridor.points = points
 		if not _fits(result, tmpl.bounds_at(pos), corridor, door["r"]):
 			continue
 
@@ -161,6 +199,46 @@ func _try_attach(result: Result, door: Dictionary, pool: Array, room_type: int) 
 	return -1
 
 
+## Plan a straight corridor from mouth `a` along `da` to a door of `tmpl` facing
+## back at it. Returns {"exit": int, "points": PackedVector2Array}, or {} when the
+## template has no opposite-facing door.
+func _plan_straight(a: Vector2, da: Vector2i, tmpl: Template) -> Dictionary:
+	var exit_index := _pick_exit(tmpl, -da)
+	if exit_index < 0:
+		return {}
+	var length: float = CORRIDOR_LENGTHS[RNG.randi_range(0, CORRIDOR_LENGTHS.size() - 1)]
+	return {"exit": exit_index, "points": PackedVector2Array([a, a + Vector2(da) * length])}
+
+
+## Plan an L-shaped corridor: leg 1 runs along `da`, then one turn onto a
+## perpendicular leg ending at a door of `tmpl` that faces back along that leg.
+## Both turn directions are tried in random order; {} when neither has a door.
+func _plan_elbow(a: Vector2, da: Vector2i, tmpl: Template) -> Dictionary:
+	var turns: Array[Vector2i] = [Vector2i(da.y, da.x), Vector2i(-da.y, -da.x)]
+	if RNG.randf() < 0.5:
+		turns.reverse()
+	for d2 in turns:
+		var exit_index := _pick_exit(tmpl, -d2)
+		if exit_index < 0:
+			continue
+		var l1: float = CORRIDOR_ELBOW_LENGTHS[RNG.randi_range(0, CORRIDOR_ELBOW_LENGTHS.size() - 1)]
+		var l2: float = CORRIDOR_ELBOW_LENGTHS[RNG.randi_range(0, CORRIDOR_ELBOW_LENGTHS.size() - 1)]
+		var elbow := a + Vector2(da) * l1
+		return {"exit": exit_index, "points": PackedVector2Array([a, elbow, elbow + Vector2(d2) * l2])}
+	return {}
+
+
+## A random exit of `tmpl` facing `dir`, or -1 if it has none.
+func _pick_exit(tmpl: Template, dir: Vector2i) -> int:
+	var matching: Array[int] = []
+	for i in tmpl.exits.size():
+		if tmpl.exits[i].dir == dir:
+			matching.append(i)
+	if matching.is_empty():
+		return -1
+	return matching[RNG.randi_range(0, matching.size() - 1)]
+
+
 ## Attach one special room to whichever open door sits farthest from start.
 func _attach_special(result: Result, frontier: Array, pool: Array, room_type: int) -> void:
 	if pool.is_empty() or frontier.is_empty():
@@ -177,30 +255,27 @@ func _attach_special(result: Result, frontier: Array, pool: Array, room_type: in
 
 
 ## Reject a candidate room/corridor that would overlap anything already placed.
+## The corridor is checked one channel rect (segment) at a time.
 func _fits(result: Result, room_bounds: Rect2, corridor: Corridor, from_room: int) -> bool:
-	var corridor_rect := _corridor_rect(corridor)
+	var corridor_rects := corridor.rects()
 	for i in result.rooms.size():
 		var other := result.rooms[i].template.bounds_at(result.rooms[i].position)
 		if room_bounds.grow(ROOM_MARGIN).intersects(other):
 			return false
 		# The corridor legitimately touches the room it sprouts from; ignore that one.
-		if i != from_room and corridor_rect.grow(ROOM_MARGIN).intersects(other):
-			return false
+		if i == from_room:
+			continue
+		for cr in corridor_rects:
+			if cr.grow(ROOM_MARGIN).intersects(other):
+				return false
 	for c in result.corridors:
-		var existing := _corridor_rect(c)
-		if room_bounds.intersects(existing):
-			return false
-		if corridor_rect.grow(ROOM_MARGIN * 0.5).intersects(existing):
-			return false
+		for existing in c.rects():
+			if room_bounds.intersects(existing):
+				return false
+			for cr in corridor_rects:
+				if cr.grow(ROOM_MARGIN * 0.5).intersects(existing):
+					return false
 	return true
-
-
-func _corridor_rect(c: Corridor) -> Rect2:
-	if c.dir.x != 0:  # horizontal
-		var x0: float = min(c.a.x, c.b.x)
-		return Rect2(x0, c.a.y - c.width * 0.5, absf(c.b.x - c.a.x), c.width)
-	var y0: float = min(c.a.y, c.b.y)
-	return Rect2(c.a.x - c.width * 0.5, y0, c.width, absf(c.b.y - c.a.y))
 
 
 # --- Graph helpers -------------------------------------------------------------

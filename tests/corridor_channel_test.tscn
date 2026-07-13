@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://vwy1d2a753ea"]
+[ext_resource type="Script" path="res://tests/corridor_channel_test.gd" id="1"]
+[node name="CorridorChannelTest" type="Node2D"]
+script = ExtResource("1")

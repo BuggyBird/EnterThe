@@ -12,7 +12,9 @@
       "Bash(powershell.exe -NoProfile -Command ' *)",
       "Bash(mkdir -p __TRACKED_VAR__/backup)",
       "Bash(cp rooms/combat/combat_cross.tscn rooms/combat/combat_tall.tscn rooms/combat/combat_wide.tscn __TRACKED_VAR__/backup/)",
-      "Bash(/c/Users/siebe/Downloads/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe --headless --path /c/Users/siebe/Documents/claude-test res://tests/_collide_viz.tscn)"
+      "Bash(/c/Users/siebe/Downloads/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe --headless --path /c/Users/siebe/Documents/claude-test res://tests/_collide_viz.tscn)",
+      "Bash(\"/c/Program Files/Godot/Godot.exe.exe\" --headless --path . res://tests/corridor_channel_test.tscn)",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }

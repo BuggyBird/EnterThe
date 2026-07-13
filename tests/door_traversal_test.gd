@@ -1,8 +1,12 @@
 extends Node2D
 ## Regression: a player-sized body must be able to walk out through every used combat
 ## door across several seeds — guards against door openings that don't clear the wall
-## or misalign with the corridor (the "stuck after clearing a room" bug).
+## or misalign with the corridor (the "stuck after clearing a room" bug). Each door is
+## walked in three lanes — centred plus hugging each side of the 48px channel — so a
+## collision lip from a door/corridor misalignment fails the test even when the
+## centre lane happens to squeeze through.
 ##   godot --headless --path <proj> res://tests/door_traversal_test.tscn
+const LANES: Array[float] = [-12.0, 0.0, 12.0]  ## Lateral offsets; ±12 + body radius 11 ~ touches the walls.
 var _seeds := [1, 7, 13, 21]
 var _si := 0
 var _dungeon: Node2D
@@ -31,7 +35,10 @@ func _physics_process(_d: float) -> void:
 			if c is RoomDef and c.type == DungeonGenerator.RoomType.COMBAT:
 				for ei in c._used_exits:
 					var e: Dictionary = c._exits[ei]
-					_doors.append({"pos": c.global_position + e["pos"], "dir": Vector2(e["dir"])})
+					var dir := Vector2(e["dir"])
+					var side := Vector2(-dir.y, dir.x)
+					for lane in LANES:
+						_doors.append({"pos": c.global_position + e["pos"] + side * lane, "dir": dir})
 		_next_door()
 	elif _phase == "move":
 		if _f < 30: body.velocity = _dir * 240.0; body.move_and_slide()
