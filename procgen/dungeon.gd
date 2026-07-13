@@ -42,6 +42,20 @@ var _canvas_modulate: CanvasModulate
 ## Size of the repeating floor motif in tiles (rooms tile a 2x2 block).
 @export var floor_pattern := Vector2i(2, 2)
 
+## Corridor wall art: the same directional tiles the hand-authored rooms paint,
+## so hallways read as built walls instead of bare floor strips in the void.
+## Names are from the FLOOR's point of view (WALL_ABOVE sits above the channel).
+const WALL_ABOVE := Vector2i(3, 19)        ## Face row directly above the floor.
+const WALL_ABOVE_CAP := Vector2i(11, 17)   ## Second row on top of the face (tall walls).
+const WALL_BELOW := Vector2i(6, 4)         ## Skirt row below the floor.
+const WALL_LEFT := Vector2i(3, 2)          ## Column left of the floor.
+## Column right of the floor cycles three variants, like the rooms' right walls.
+const WALL_RIGHT: Array[Vector2i] = [Vector2i(11, 21), Vector2i(11, 22), Vector2i(11, 23)]
+const CORNER_TL := Vector2i(5, 1)          ## Outer corners (diagonal floor contact only).
+const CORNER_TR := Vector2i(7, 1)
+const CORNER_BL := Vector2i(5, 4)
+const CORNER_BR := Vector2i(11, 16)
+
 var _spawned: Array[Node] = []   ## Everything we add per floor (freed on regen).
 var _player: Node2D
 var _map_rooms: Array = []       ## {"node", "rect", "type"} per room, for the minimap.
@@ -256,10 +270,15 @@ func _build_corridor_walls(node: Node2D, corridor: DungeonGenerator.Corridor,
 		for dx in range(-1, 2):
 			for dy in range(-1, 2):
 				var n := cell + Vector2i(dx, dy)
-				if not cells.has(n) and not open.has(n):
+				# Cells inside a room's footprint are the room's responsibility —
+				# rooms are watertight on their own. Corridor wall blocks in there
+				# (flanking the doorway strip) are invisible snags: hugging the room
+				# wall toward the door catches on them at the corner.
+				if not cells.has(n) and not open.has(n) and not _inside_any_room(n):
 					walls[n] = true
 	if walls.is_empty():
 		return
+	_paint_corridor_walls(node, cells, walls)
 
 	var body := StaticBody2D.new()
 	node.add_child(body)
@@ -272,6 +291,61 @@ func _build_corridor_walls(node: Node2D, corridor: DungeonGenerator.Corridor,
 		body.add_child(shape)
 		if draw_corridor_walls:
 			node.add_child(_rect_polygon(strip.get_center(), strip.size, Color(0.16, 0.14, 0.2)))
+
+
+## Dress the corridor's wall ring in the rooms' wall art. Each wall cell picks its
+## tile from where the channel floor sits relative to it (face above the floor,
+## skirt below, columns at the sides, corner pieces on diagonal-only contact).
+## Purely visual — collision stays on the invisible StaticBody strips — and painted
+## on world grid cells so it lines up with the floor and the rooms. Walls above the
+## channel also get a second cap row, matching the rooms' tall north walls.
+func _paint_corridor_walls(parent: Node2D, cells: Dictionary, walls: Dictionary) -> void:
+	if corridor_tileset == null:
+		return
+	var tml := TileMapLayer.new()
+	tml.name = "WallTiles"
+	tml.tile_set = corridor_tileset
+	tml.collision_enabled = false
+	for cell: Vector2i in walls:
+		var atlas := _wall_tile_for(cell, cells)
+		tml.set_cell(cell, floor_source_id, atlas)
+		# Tall wall: cap the face row, unless something else already owns that cell.
+		var above := cell + Vector2i.UP
+		if atlas == WALL_ABOVE and not cells.has(above) and not walls.has(above) \
+				and not _inside_any_room(above):
+			tml.set_cell(above, floor_source_id, WALL_ABOVE_CAP)
+	parent.add_child(tml)
+
+
+## Whether a world grid cell's centre lies within any placed room's footprint
+## (the rect already covers the room's full painted art, not just room_size).
+func _inside_any_room(cell: Vector2i) -> bool:
+	var center := (Vector2(cell) + Vector2(0.5, 0.5)) * CELL
+	for room in _map_rooms:
+		if (room["rect"] as Rect2).has_point(center):
+			return true
+	return false
+
+
+## The art tile for one corridor wall cell, from the direction of the adjacent
+## channel floor. Orthogonal contact wins (faces/columns); diagonal-only contact
+## means the cell is the outer corner of an elbow.
+func _wall_tile_for(cell: Vector2i, floor_cells: Dictionary) -> Vector2i:
+	if floor_cells.has(cell + Vector2i.DOWN):
+		return WALL_ABOVE
+	if floor_cells.has(cell + Vector2i.UP):
+		return WALL_BELOW
+	if floor_cells.has(cell + Vector2i.RIGHT):
+		return WALL_LEFT
+	if floor_cells.has(cell + Vector2i.LEFT):
+		return WALL_RIGHT[posmod(cell.y, WALL_RIGHT.size())]
+	if floor_cells.has(cell + Vector2i(1, 1)):
+		return CORNER_TL
+	if floor_cells.has(cell + Vector2i(-1, 1)):
+		return CORNER_TR
+	if floor_cells.has(cell + Vector2i(1, -1)):
+		return CORNER_BL
+	return CORNER_BR
 
 
 ## Merge a set of grid cells into one Rect2 (world px) per horizontal run.
