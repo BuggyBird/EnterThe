@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://c0plr0treas001"]
+[gd_scene load_steps=4 format=3 uid="uid://c0plr0treas001"]
 
 [ext_resource type="Script" path="res://procgen/room_def.gd" id="1"]
 [ext_resource type="Script" path="res://procgen/door_anchor.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://dlamp0decor001" path="res://rooms/decoration/lamp.tscn" id="3"]
 
 [node name="TreasureVault" type="Node2D"]
 script = ExtResource("1")
@@ -14,3 +15,6 @@ room_size = Vector2(300, 240)
 position = Vector2(-150, 0)
 script = ExtResource("2")
 direction = 2
+
+[node name="Lamp" parent="." instance=ExtResource("3")]
+position = Vector2(0, -84)

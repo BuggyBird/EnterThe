@@ -24,6 +24,14 @@ const MAX_ATTEMPTS := 24   ## Rerolls allowed before accepting a best-effort flo
 @export var background_alpha := 0.6
 @export var background_margin := 240.0   ## How far the backdrop extends past the rooms.
 
+@export_group("Lighting")
+## Global darkness laid over the whole floor via a CanvasModulate; the player's light
+## (and any others) brighten areas back up. Raise toward white for a brighter dungeon,
+## lower toward black for a pitch-dark one. UI lives on separate CanvasLayers, so only
+## the world is dimmed.
+@export var dark_ambient := Color(0.16, 0.15, 0.22)
+var _canvas_modulate: CanvasModulate
+
 @export_group("Corridor floor tiles")
 ## Assign the shared dungeon TileSet to texture corridor floors like the rooms.
 ## Leave null to fall back to a flat placeholder floor.
@@ -41,7 +49,18 @@ var _map_corridors: Array = []   ## {"a", "b"} world door-mouths, for the minima
 
 
 func _ready() -> void:
+	_setup_darkness()
 	generate()
+
+
+## Dim the whole world once (persists across regens — it's not part of _spawned).
+## A CanvasModulate multiplies every CanvasItem on the default canvas by dark_ambient;
+## the player's PointLight2D adds brightness back around the player.
+func _setup_darkness() -> void:
+	_canvas_modulate = CanvasModulate.new()
+	_canvas_modulate.name = "Darkness"
+	_canvas_modulate.color = dark_ambient
+	add_child(_canvas_modulate)
 
 
 func _process(_delta: float) -> void:

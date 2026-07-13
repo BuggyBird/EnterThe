@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://6shvpp1bwm1u"]
+
+[ext_resource type="Script" path="res://rooms/decoration/lamp.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cedb5hsgyseog" path="res://rooms/decoration/Lamp.png" id="2"]
+
+[node name="Lamp" type="Sprite2D"]
+texture = ExtResource("2")
+scale = Vector2(1.5, 1.5)
+script = ExtResource("1")

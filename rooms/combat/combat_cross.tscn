@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://b8mbr138giwbo" path="res://procgen/room_def.gd" id="1"]
 [ext_resource type="Script" uid="uid://c8q1u4fkxuevj" path="res://procgen/door_anchor.gd" id="2"]
 [ext_resource type="Texture2D" uid="uid://djum4xphkhy7m" path="res://Assets/walls_floor.png" id="3_67vdu"]
+[ext_resource type="PackedScene" uid="uid://6shvpp1bwm1u" path="res://rooms/decoration/lamp.tscn" id="4_lamp"]
+[ext_resource type="Texture2D" uid="uid://bdywrxqjek6gv" path="res://rooms/combat/Lamp.png" id="5_2g6tu"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_67vdu"]
 texture = ExtResource("3_67vdu")
@@ -351,3 +353,8 @@ scale = Vector2(1.6136364, 1.0806452)
 texture = ExtResource("3_67vdu")
 region_enabled = true
 region_rect = Rect2(18.388428, 112.16528, 44.628082, 62.80992)
+
+[node name="LampRight" parent="." unique_id=620033422 instance=ExtResource("4_lamp")]
+position = Vector2(-1.5258789e-05, 27)
+scale = Vector2(0.7003868, 0.5852415)
+texture = ExtResource("5_2g6tu")

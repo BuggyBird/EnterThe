@@ -23,6 +23,19 @@ extends CharacterBody2D
 @export var recoil_return := 95.0      ## How fast the weapon settles back (px/s).
 @export var recoil_tilt := 0.03        ## Muzzle-rise rotation per px of kick (radians).
 
+@export_group("Light")
+## The player carries a soft circle of light through the darkened dungeon. `light_radius`
+## is read every frame, so changing it at runtime (a torch upgrade, a pickup, a
+## flicker, fading out on death) grows or shrinks the lit circle live.
+@export var light_enabled := true
+@export var light_radius := 240.0                       ## Radius of the lit circle (px).
+@export var light_energy := 1.25                        ## Brightness of the light.
+@export var light_color := Color(1.0, 0.93, 0.78)       ## Warm torch tint.
+## Organic wobble so the circle breathes over time. Kept small/slow so it's a gentle
+## breathe, not a vibration. 0 = perfectly steady.
+@export var light_flicker := 0.02                        ## Fraction the radius/energy wavers by.
+@export var light_flicker_speed := 2.5
+
 ## Unit vector from the player toward the aim target (mouse). Read by states,
 ## the camera, and later the weapon system for firing direction.
 var aim_direction := Vector2.RIGHT
@@ -45,6 +58,12 @@ var _base_weapon_pos := Vector2.ZERO
 ## Current backward recoil displacement, decaying to 0 each frame.
 var _recoil := 0.0
 
+## The player's radial light + its half-texture size (for radius -> scale), and a
+## clock driving the flicker.
+const LIGHT_TEX_HALF := 128.0
+var _light: PointLight2D
+var _light_time := 0.0
+
 
 func _ready() -> void:
 	# Wire component refs in code (reliable in hand-authored scenes).
@@ -59,14 +78,67 @@ func _ready() -> void:
 	_on_weapon_equipped(weapon_holder.get_current_data())
 	# Kick the held weapon back on every shot for tactile firing feedback.
 	EventBus.weapon_fired.connect(_on_weapon_fired)
+	_setup_light()
 	EventBus.player_spawned.emit(self)
 
 
 func _process(delta: float) -> void:
 	_update_aim()
 	_update_recoil(delta)
+	_update_light(delta)
 	_handle_shooting()
 	_handle_weapon_input()
+
+
+## Build the player's radial light once. Its texture is a soft white circle
+## generated in code (a radial gradient, bright centre fading to transparent), so no
+## art asset is needed; colour/energy/radius are all driven from the export vars.
+func _setup_light() -> void:
+	if not light_enabled:
+		return
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1, 1, 1, 1))
+	gradient.set_color(1, Color(1, 1, 1, 0))
+	# A gentle falloff curve reads softer than a straight ramp.
+	gradient.add_point(0.55, Color(1, 1, 1, 0.65))
+	var tex := GradientTexture2D.new()
+	tex.gradient = gradient
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = int(LIGHT_TEX_HALF * 2.0)
+	tex.height = int(LIGHT_TEX_HALF * 2.0)
+
+	_light = PointLight2D.new()
+	_light.name = "PlayerLight"
+	_light.texture = tex
+	# MIX (not ADD) so this light UNIONs with others instead of stacking: where it
+	# overlaps the lamp's glow the brightness merges rather than doubling into a
+	# hotspot, while each light still fully radiates its own non-overlapping area.
+	_light.blend_mode = Light2D.BLEND_MODE_MIX
+	add_child(_light)
+	_update_light(0.0)
+
+
+## Read the export vars every frame so the lit circle tracks any runtime change to
+## radius/energy/colour, plus a soft time-based flicker so it breathes.
+func _update_light(delta: float) -> void:
+	if _light == null:
+		return
+	_light_time += delta
+	# Two out-of-phase sines make an organic, non-repetitive wobble in [-1, 1].
+	var wobble := sin(_light_time * light_flicker_speed) * 0.6 \
+		+ sin(_light_time * light_flicker_speed * 2.3 + 1.7) * 0.4
+	var radius := light_radius * (1.0 + light_flicker * wobble)
+	_light.texture_scale = maxf(radius, 1.0) / LIGHT_TEX_HALF
+	_light.color = light_color
+	_light.energy = light_energy * (1.0 + light_flicker * 0.5 * wobble)
+
+
+## Set the light's base radius (px). Convenience for upgrades/pickups/effects that
+## want to grow or shrink the circle; the change is picked up next frame.
+func set_light_radius(radius: float) -> void:
+	light_radius = maxf(radius, 0.0)
 
 
 ## Point the aim pivot (indicator + muzzle + held weapon) toward the mouse cursor.
