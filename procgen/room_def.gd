@@ -253,6 +253,23 @@ func get_room_size() -> Vector2:
 	return room_size.max(_art_extents())
 
 
+## The painted art's TIGHT bounding rect in room-local px (asymmetric — exactly
+## where tiles exist, unlike the symmetrized get_room_size footprint). Falls back
+## to the declared room_size rect for rooms without a tilemap, whose auto-built
+## perimeter sits exactly on that edge. Used by the Dungeon to clip corridor
+## walls: clipping by the symmetrized rect would eat corridor walls in the
+## phantom band where the rect overshoots the real art.
+func art_rect_local() -> Rect2:
+	var tml := _find_floor_map()
+	if tml == null:
+		return Rect2(-_half, room_size)
+	var used: Rect2i = tml.get_used_rect()
+	if used.size == Vector2i.ZERO:
+		return Rect2(-_half, room_size)
+	var cell := Vector2(tml.tile_set.tile_size)
+	return Rect2(Vector2(used.position) * cell + tml.position, Vector2(used.size) * cell)
+
+
 ## How far the room's painted tilemap actually reaches, measured symmetrically
 ## about the origin (the generator treats rooms as rects centred on it).
 func _art_extents() -> Vector2:
@@ -307,7 +324,7 @@ func _all_descendants(node: Node) -> Array:
 ## it sideways). A thin Area2D across the mouth detects the player stepping
 ## through; a crossed portal has served its purpose and is removed for good.
 func _build_portals() -> void:
-	var frames := _portal_frames()
+	var frames := portal_frames()
 	if frames == null:
 		return
 	for i in _used_exits:
@@ -346,10 +363,11 @@ func _build_portals() -> void:
 
 
 ## The portal sheet sliced into a looping animation, built once and shared by
-## every room (the texture is a 3x2 grid of PORTAL_FRAME-sized cells).
+## every room and by the hub's run portal (the texture is a 3x2 grid of
+## PORTAL_FRAME-sized cells).
 static var _portal_sprite_frames: SpriteFrames
 
-func _portal_frames() -> SpriteFrames:
+static func portal_frames() -> SpriteFrames:
 	if _portal_sprite_frames != null:
 		return _portal_sprite_frames
 	var tex: Texture2D = load(PORTAL_TEXTURE_PATH)
