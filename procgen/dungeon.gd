@@ -8,8 +8,7 @@ extends Node2D
 ## Rooms come from a RoomCatalog (pools of .tscn scenes by type). The generator only
 ## sees each room's size + door anchors; this node owns everything scene-related.
 
-const WALL_THICKNESS := 18.0
-const DOOR_WIDTH := 48.0   ## 3 tiles. Must match DungeonGenerator.DOOR_WIDTH.
+const CELL := 16.0         ## Tile grid pitch (px); matches the dungeon tileset and RoomDef.
 const MAX_ATTEMPTS := 24   ## Rerolls allowed before accepting a best-effort floor.
 
 @export var catalog: RoomCatalog
@@ -140,9 +139,9 @@ func _floor_bounds(result: DungeonGenerator.Result) -> Rect2:
 		bounds = r if first else bounds.merge(r)
 		first = false
 	for corridor in result.corridors:
-		var cr := Rect2(corridor.a, Vector2.ZERO).expand(corridor.b)
-		bounds = cr if first else bounds.merge(cr)
-		first = false
+		for cr in corridor.rects():
+			bounds = cr if first else bounds.merge(cr)
+			first = false
 	return bounds
 
 
@@ -163,87 +162,118 @@ func _build_rooms(result: DungeonGenerator.Result) -> void:
 func _build_corridors(result: DungeonGenerator.Result) -> void:
 	for corridor in result.corridors:
 		_build_corridor(corridor)
-		_map_corridors.append({"a": corridor.a, "b": corridor.b})
+		_map_corridors.append({"a": corridor.a, "b": corridor.b, "points": corridor.points})
 
 
-## A straight hallway: a floor strip plus a solid wall down each long side.
+## A hallway, straight or L-shaped: floor across every channel rect, then walls
+## derived from the floor cells. Working in whole grid cells keeps any corridor
+## shape watertight and exactly aligned with the rooms' tilemaps.
 func _build_corridor(corridor: DungeonGenerator.Corridor) -> void:
-	var length := corridor.a.distance_to(corridor.b)
-	if length < 1.0:
-		return
-	var mid := (corridor.a + corridor.b) * 0.5
-	var horizontal := corridor.dir.x != 0
-	# Extend the walls a touch past each mouth so the corners seal against room walls.
-	var span := length + WALL_THICKNESS * 2.0
-
 	var node := Node2D.new()
 	node.name = "Corridor"
 	node.add_to_group(&"corridors")
 	add_child(node)
 	_spawned.append(node)
 
-	_build_corridor_floor(node, corridor, length, horizontal)
+	# The walkable channel as a set of world grid cells. Rects are grid-aligned by
+	# construction (door mouths + leg lengths are chosen for it), and the elbow
+	# square is shared by both legs' rects — the set union handles that for free.
+	var cells := {}
+	for rect in corridor.rects():
+		var c0 := Vector2i(roundi(rect.position.x / CELL), roundi(rect.position.y / CELL))
+		var c1 := Vector2i(roundi(rect.end.x / CELL), roundi(rect.end.y / CELL))
+		for cx in range(c0.x, c1.x):
+			for cy in range(c0.y, c1.y):
+				cells[Vector2i(cx, cy)] = true
+
+	_build_corridor_floor(node, corridor, cells)
+	_build_corridor_walls(node, corridor, cells)
+
+
+## Floor the channel cells: paint a TileMapLayer with the same repeating motif the
+## rooms use so hallways read as part of the dungeon. Painted on WORLD grid cells
+## (the layer stays at the origin) with the motif keyed to world-cell parity, so
+## the pattern stays in phase with the rooms and across every corridor. Falls back
+## to flat fills if no tileset is assigned.
+func _build_corridor_floor(parent: Node2D, corridor: DungeonGenerator.Corridor,
+		cells: Dictionary) -> void:
+	if corridor_tileset == null:
+		for rect in corridor.rects():
+			parent.add_child(_rect_polygon(rect.get_center(), rect.size, Color(0.07, 0.06, 0.10)))
+		return
+	var tml := TileMapLayer.new()
+	tml.tile_set = corridor_tileset
+	var mod_x := maxi(1, floor_pattern.x)
+	var mod_y := maxi(1, floor_pattern.y)
+	for cell: Vector2i in cells:
+		var atlas := floor_tile_origin + Vector2i(posmod(cell.x, mod_x), posmod(cell.y, mod_y))
+		tml.set_cell(cell, floor_source_id, atlas)
+	parent.add_child(tml)
+
+
+## Solid collision hugging the channel: every cell that touches a floor cell (8-way,
+## so outer elbow corners seal too) and is not itself floor becomes wall — except
+## the opening in front of each door mouth, which stays clear so the player can pass
+## into the rooms. Runs of wall cells merge into row strips to keep shape counts low.
+## Walls collide but stay invisible unless draw_corridor_walls is on, same as before.
+func _build_corridor_walls(node: Node2D, corridor: DungeonGenerator.Corridor,
+		cells: Dictionary) -> void:
+	# Cells just beyond each mouth (3 wide, matching the door opening, 2 deep) are
+	# exempt from becoming wall: they're the doorway into the room.
+	var open := {}
+	var last := corridor.points.size() - 1
+	for end_index in [0, last]:
+		var mouth := corridor.points[end_index]
+		var neighbour := corridor.points[1] if end_index == 0 else corridor.points[last - 1]
+		var out_dir := (mouth - neighbour).normalized()   # points into the room
+		var along := Vector2(absf(out_dir.y), absf(out_dir.x))
+		for k in 2:
+			for s in range(-1, 2):
+				var p := mouth + out_dir * (CELL * (0.5 + k)) + along * (CELL * s)
+				open[Vector2i(floori(p.x / CELL), floori(p.y / CELL))] = true
+
+	var walls := {}
+	for cell: Vector2i in cells:
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				var n := cell + Vector2i(dx, dy)
+				if not cells.has(n) and not open.has(n):
+					walls[n] = true
+	if walls.is_empty():
+		return
 
 	var body := StaticBody2D.new()
 	node.add_child(body)
-	var offset := DOOR_WIDTH * 0.5 + WALL_THICKNESS * 0.5
-	if horizontal:
-		_corridor_wall(body, node, Vector2(mid.x, mid.y - offset), Vector2(span, WALL_THICKNESS))
-		_corridor_wall(body, node, Vector2(mid.x, mid.y + offset), Vector2(span, WALL_THICKNESS))
-	else:
-		_corridor_wall(body, node, Vector2(mid.x - offset, mid.y), Vector2(WALL_THICKNESS, span))
-		_corridor_wall(body, node, Vector2(mid.x + offset, mid.y), Vector2(WALL_THICKNESS, span))
+	for strip in _merge_cell_rows(walls):
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = strip.size
+		shape.shape = rect
+		shape.position = strip.get_center()
+		body.add_child(shape)
+		if draw_corridor_walls:
+			node.add_child(_rect_polygon(strip.get_center(), strip.size, Color(0.16, 0.14, 0.2)))
 
 
-func _corridor_wall(body: StaticBody2D, visual_parent: Node2D, center: Vector2, size: Vector2) -> void:
-	var shape := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = size
-	shape.shape = rect
-	shape.position = center
-	body.add_child(shape)
-	if draw_corridor_walls:
-		visual_parent.add_child(_rect_polygon(center, size, Color(0.16, 0.14, 0.2)))
-
-
-## Floor the corridor: paint a TileMapLayer with the same repeating motif the rooms
-## use so hallways read as part of the dungeon. Falls back to a flat fill if no
-## tileset is assigned. Corridor spans are multiples of the tile size, so cells fit.
-func _build_corridor_floor(parent: Node2D, corridor: DungeonGenerator.Corridor,
-		length: float, horizontal: bool) -> void:
-	var x0: float
-	var y0: float
-	var w: float
-	var h: float
-	if horizontal:
-		x0 = minf(corridor.a.x, corridor.b.x)
-		y0 = corridor.a.y - DOOR_WIDTH * 0.5
-		w = length
-		h = DOOR_WIDTH
-	else:
-		x0 = corridor.a.x - DOOR_WIDTH * 0.5
-		y0 = minf(corridor.a.y, corridor.b.y)
-		w = DOOR_WIDTH
-		h = length
-
-	if corridor_tileset == null:
-		parent.add_child(_rect_polygon(Vector2(x0 + w * 0.5, y0 + h * 0.5),
-			Vector2(w, h), Color(0.07, 0.06, 0.10)))
-		return
-
-	var tml := TileMapLayer.new()
-	tml.tile_set = corridor_tileset
-	tml.position = Vector2(x0, y0)
-	var tile: Vector2i = corridor_tileset.tile_size
-	var cols := int(round(w / tile.x))
-	var rows := int(round(h / tile.y))
-	var mod_x := maxi(1, floor_pattern.x)
-	var mod_y := maxi(1, floor_pattern.y)
-	for col in cols:
-		for row in rows:
-			var atlas := floor_tile_origin + Vector2i(col % mod_x, row % mod_y)
-			tml.set_cell(Vector2i(col, row), floor_source_id, atlas)
-	parent.add_child(tml)
+## Merge a set of grid cells into one Rect2 (world px) per horizontal run.
+func _merge_cell_rows(cell_set: Dictionary) -> Array[Rect2]:
+	var keys: Array = cell_set.keys()
+	keys.sort_custom(func(u: Vector2i, v: Vector2i) -> bool:
+		return u.y < v.y or (u.y == v.y and u.x < v.x))
+	var out: Array[Rect2] = []
+	var run := Rect2()
+	var prev := Vector2i(2147483647, 2147483647)
+	for c: Vector2i in keys:
+		if c.y == prev.y and c.x == prev.x + 1:
+			run.size.x += CELL
+		else:
+			if run.size.x > 0:
+				out.append(run)
+			run = Rect2(c.x * CELL, c.y * CELL, CELL, CELL)
+		prev = c
+	if run.size.x > 0:
+		out.append(run)
+	return out
 
 
 func _rect_polygon(center: Vector2, size: Vector2, color: Color) -> Polygon2D:

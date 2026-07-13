@@ -27,7 +27,8 @@ const SHROUD_Z := 100                              ## Above room interior + occu
 const FLOOR_TILE := Vector2i(7, 13)                ## Doors get replaced with this floor tile.
 const FLOOR_TILES: Array[Vector2i] = [Vector2i(7, 13), Vector2i(8, 13), Vector2i(7, 14), Vector2i(8, 14)]
 const DOOR_TILES_WIDE := 3                          ## Door opening width in tiles (matches corridor).
-const WALL_CLEAR_DEPTH := 4                          ## Tiles cleared inward from the wall line (through the wall onto the interior floor, which is invisible).
+const WALL_CLEAR_DEPTH := 4                          ## Tiles floored inward from the door mouth (through the wall art onto the interior floor).
+const OUTWARD_ERASE_DEPTH := 6                       ## Tiles erased outward from the mouth — clears wall face + any trim/skirt rows crossing the corridor.
 const GATE_TILE := Vector2i(4, 26)                  ## Placeholder door tile; solid, so it seals when painted at the opening.
 
 const DUMMY_SCENE := "res://actors/enemies/dummy/dummy.tscn"
@@ -163,30 +164,41 @@ func _setup_tile_collision(ts: TileSet) -> void:
 
 ## Carve every used door open on the room's own tilemap (so the opening, its
 ## collision, and its lock-gate all share one grid — no misaligned overlay). The
-## opening is DOOR_TILES_WIDE tiles across and cleared through the wall only; a
-## single row of gate cells at the wall line is recorded so the door can be
-## sealed/reopened later by repainting those cells.
+## opening is DOOR_TILES_WIDE tiles across. Cells are addressed relative to the door
+## MOUTH (the anchor's grid line, where the corridor starts) by sampling half a tile
+## to either side, so the carve is exact on every wall regardless of which way
+## local_to_map rounds. OUTWARD of the mouth every painted cell is erased through
+## OUTWARD_ERASE_DEPTH — walls often carry extra trim/skirt rows outside the face,
+## and any one of them left solid is an invisible bar across the corridor. INWARD
+## the strip is painted floor through WALL_CLEAR_DEPTH so the doorway stays walkable
+## through the tall wall art. A row of gate cells on the first INWARD cell (inside
+## the room, never hidden under the corridor's own floor tiles) is recorded so the
+## door can be sealed/reopened later by repainting those cells.
 func _punch_doors(tml: TileMapLayer) -> void:
 	_gate_map = tml
 	_gates.clear()
 	var half := DOOR_TILES_WIDE / 2
 	for i in _used_exits:
 		var door: Dictionary = _exits[i]
-		var c := tml.local_to_map(door["pos"] - tml.position)
+		var mouth: Vector2 = door["pos"] - tml.position
 		var dir: Vector2i = door["dir"]
 		var along := Vector2i(1, 0) if dir.y != 0 else Vector2i(0, 1)
-		var inward := -dir   # toward the room centre (dir points outward)
-		# A 3-tile opening, world-aligned to the corridor. Carve only through the
-		# wall (a tile outside it, then inward WALL_CLEAR_DEPTH) so it does NOT gouge
-		# a deep channel into the room.
-		for a in range(-half, half + 1):
-			for d in range(-1, WALL_CLEAR_DEPTH + 1):
-				tml.set_cell(c + along * a + inward * d, 0, FLOOR_TILE)
-		# 3-tile gate on the wall line (one placeholder tile), painted solid on lock.
 		var cells: Array[Vector2i] = []
 		for a in range(-half, half + 1):
-			cells.append(c + along * a)
+			for k in OUTWARD_ERASE_DEPTH:
+				tml.erase_cell(_cell_from_mouth(tml, mouth, dir, k) + along * a)
+			for k in WALL_CLEAR_DEPTH:
+				tml.set_cell(_cell_from_mouth(tml, mouth, -dir, k) + along * a, 0, FLOOR_TILE)
+			cells.append(_cell_from_mouth(tml, mouth, -dir, 0) + along * a)
 		_gates.append({"cells": cells})
+
+
+## The k-th cell on `side`'s side of a door mouth (k = 0 is the cell touching the
+## mouth line). Sampled at the cell's centre so grid-line positions never round to
+## the wrong side.
+func _cell_from_mouth(tml: TileMapLayer, mouth: Vector2, side: Vector2i, k: int) -> Vector2i:
+	var cell := Vector2(tml.tile_set.tile_size)
+	return tml.local_to_map(mouth + Vector2(side) * cell * (0.5 + float(k)))
 
 
 ## Cover the whole room (interior + walls) with near-black fog so unentered rooms
@@ -239,11 +251,22 @@ func _collect_exits() -> Array[Dictionary]:
 	var source: Array = doors.get_children() if doors else _all_descendants(self)
 	for node in source:
 		if node is DoorAnchor:
-			# Snap doors to the 16px tile grid. Corridor lengths are multiples of 16
-			# and rooms grow from the origin, so grid-aligned doors keep every door
-			# position on the grid — the 2-tile opening and 2-tile corridor line up.
-			found.append({"pos": node.position.snapped(Vector2(16, 16)), "dir": node.dir_vec()})
+			found.append({"pos": _snap_door_pos(node.position, node.dir_vec()), "dir": node.dir_vec()})
 	return found
+
+
+## Snap a door anchor to the 16px tile grid, axis-aware. ALONG the wall the doorway
+## centre must sit on a tile CENTRE (16k + 8): the opening is an odd number of tiles
+## (DOOR_TILES_WIDE = 3) centred on this point, and only a centre-of-cell anchor makes
+## its 48px span cover whole cells. On the OUTWARD axis it snaps to a grid line, so
+## corridor spans stay multiples of 16 and room origins stay on the grid. Together
+## this makes the carved opening, the corridor floor tiles and the corridor wall
+## collision all cover the exact same 3 tile rows/columns — no half-tile seams, no
+## collision lips to get stuck on.
+func _snap_door_pos(p: Vector2, dir: Vector2i) -> Vector2:
+	if dir.x != 0:  # left/right wall: x on a grid line, y on a cell centre
+		return Vector2(snappedf(p.x, 16.0), snappedf(p.y - 8.0, 16.0) + 8.0)
+	return Vector2(snappedf(p.x - 8.0, 16.0) + 8.0, snappedf(p.y, 16.0))
 
 
 func _all_descendants(node: Node) -> Array:

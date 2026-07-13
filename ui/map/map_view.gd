@@ -82,11 +82,15 @@ func _draw() -> void:
 	var origin := Vector2(PADDING, PADDING) + (avail - drawn) * 0.5
 
 	# Corridors first (under rooms), only where they touch discovered territory.
+	# Drawn segment by segment so L-shaped corridors render with their turn.
 	for corridor in _corridors:
 		if not _corridor_visible(corridor):
 			continue
-		draw_line(_to_local(corridor["a"], origin, scale),
-			_to_local(corridor["b"], origin, scale), CORRIDOR_COLOR, 2.0)
+		var pts: PackedVector2Array = corridor.get("points",
+			PackedVector2Array([corridor["a"], corridor["b"]]))
+		for i in pts.size() - 1:
+			draw_line(_to_local(pts[i], origin, scale),
+				_to_local(pts[i + 1], origin, scale), CORRIDOR_COLOR, 2.0)
 
 	# Rooms.
 	for room in _rooms:
