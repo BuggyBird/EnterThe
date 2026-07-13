@@ -20,8 +20,7 @@ const DIRECTIONS: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, 
 
 const DEFAULT_TILESET_PATH := "res://resources/dungeon_tileset.tres"
 const DOOR_LOCKED_TINT := Color(1.0, 0.4, 0.42)   ## Red flash on the door tiles while sealed.
-const SHROUD_COLOR := Color(0.015, 0.012, 0.03, 1.0)   ## Near-black fog over unentered rooms.
-const SHROUD_Z := 100                              ## Above room interior + occupants, below UI.
+const REVEAL_FADE_TIME := 0.9                      ## Seconds a room takes to fade in on discovery.
 
 ## Floor atlas tiles that stay walkable (no collision) when we build tile collision.
 const FLOOR_TILE := Vector2i(7, 13)                ## Doors get replaced with this floor tile.
@@ -67,8 +66,7 @@ var _spawn_points: Array[Vector2] = []
 var _activated := false
 var _alive_enemies := 0
 var _configured := false
-var _shroud: Polygon2D            ## Dark fog covering the room until first entered.
-var is_discovered := false        ## True once the player has entered (fog lifted).
+var is_discovered := false        ## True once the player has entered (room made visible).
 var _tilemap_collision := false   ## True when an authored tilemap supplies wall collision.
 var _gate_map: TileMapLayer       ## The tilemap doors are painted onto (tiled rooms).
 var _gates: Array = []            ## Per used door: {"cells": Array[Vector2i], "tiles": Array[Vector2i]}.
@@ -102,7 +100,7 @@ func _build() -> void:
 	_build_walls()
 	_build_interior_detector()
 	_collect_spawn_points()
-	_build_shroud()
+	_hide_until_discovered()
 
 
 ## If the room authored a TileMapLayer, make the tiles carry the collision: every
@@ -201,35 +199,28 @@ func _cell_from_mouth(tml: TileMapLayer, mouth: Vector2, side: Vector2i, k: int)
 	return tml.local_to_map(mouth + Vector2(side) * cell * (0.5 + float(k)))
 
 
-## Cover the whole room (interior + walls) with near-black fog so unentered rooms
-## read as dark, Enter-the-Gungeon style. The start room begins revealed since the
-## player spawns inside it. Lifted on first entry by _reveal().
-func _build_shroud() -> void:
+## Fog of war: an unentered room simply isn't rendered — no overlay, the void
+## around the floor shows through where the room will be. Visibility doesn't touch
+## physics, so the walls still collide and the interior detector still fires the
+## reveal. The start room begins revealed since the player spawns inside it.
+func _hide_until_discovered() -> void:
 	if type == DungeonGenerator.RoomType.START:
 		is_discovered = true
 		return
-	var half := _half + Vector2(WALL_THICKNESS, WALL_THICKNESS) * 1.5
-	_shroud = Polygon2D.new()
-	_shroud.name = "Shroud"
-	_shroud.color = SHROUD_COLOR
-	_shroud.z_index = SHROUD_Z
-	_shroud.polygon = PackedVector2Array([
-		Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
-		Vector2(half.x, half.y), Vector2(-half.x, half.y),
-	])
-	add_child(_shroud)
+	visible = false
+	modulate = Color(1.0, 1.0, 1.0, 0.0)   # Fade-in starting point for _reveal().
 
 
-## Fade the fog out the first time the player steps into the room.
+## Materialise the room out of the void the first time the player steps in: a
+## slow, eased fade-in rather than an instant pop.
 func _reveal() -> void:
 	if is_discovered:
 		return
 	is_discovered = true
-	if is_instance_valid(_shroud):
-		var tween := create_tween()
-		tween.tween_property(_shroud, "modulate:a", 0.0, 0.3)
-		tween.tween_callback(_shroud.queue_free)
-		_shroud = null
+	visible = true
+	var tween := create_tween()
+	tween.tween_property(self, "modulate:a", 1.0, REVEAL_FADE_TIME) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 # --- Queried by the generator (via a throwaway instance) ----------------------
@@ -241,8 +232,28 @@ func get_exits() -> Array[Dictionary]:
 	return _exits
 
 
+## The footprint the generator must reserve for this room: the declared room_size,
+## grown to cover the painted tilemap when the art overshoots it. Hand-authored
+## art regularly extends past room_size (tall walls, trim, decoration); if the
+## generator only saw room_size, two rooms' art could overlap on screen even
+## though their declared bounds kept their distance.
 func get_room_size() -> Vector2:
-	return room_size
+	return room_size.max(_art_extents())
+
+
+## How far the room's painted tilemap actually reaches, measured symmetrically
+## about the origin (the generator treats rooms as rects centred on it).
+func _art_extents() -> Vector2:
+	var tml := _find_floor_map()
+	if tml == null:
+		return Vector2.ZERO
+	var used: Rect2i = tml.get_used_rect()
+	if used.size == Vector2i.ZERO:
+		return Vector2.ZERO
+	var cell := Vector2(tml.tile_set.tile_size)
+	var tl := Vector2(used.position) * cell + tml.position
+	var br := tl + Vector2(used.size) * cell
+	return Vector2(maxf(absf(tl.x), absf(br.x)), maxf(absf(tl.y), absf(br.y))) * 2.0
 
 
 func _collect_exits() -> Array[Dictionary]:

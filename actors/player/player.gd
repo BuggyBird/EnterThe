@@ -36,12 +36,23 @@ extends CharacterBody2D
 @export var light_flicker := 0.02                        ## Fraction the radius/energy wavers by.
 @export var light_flicker_speed := 2.5
 
+@export_group("Pulse")
+## Heartbeat tint on the player sprite so the avatar reads as alive: two thumps per
+## beat (lub-dub) that briefly flush the colour warm, with a quiet rest between
+## beats. Multiplies the sprite's own modulate only, so it stacks cleanly with the
+## dodge roll's whole-body fade.
+@export var pulse_enabled := true
+@export var pulse_rate := 1.0          ## Heartbeats per second.
+@export var pulse_strength := 0.35     ## Blend toward pulse_color at a beat's peak (0-1).
+@export var pulse_color := Color(1.25, 0.9, 0.85)   ## Warm, blood-tinged flush.
+
 ## Unit vector from the player toward the aim target (mouse). Read by states,
 ## the camera, and later the weapon system for firing direction.
 var aim_direction := Vector2.RIGHT
 ## False while a roll is on cooldown.
 var can_roll := true
 
+@onready var sprite: Sprite2D = $Sprite
 @onready var aim_pivot: Node2D = $AimPivot
 @onready var muzzle: Marker2D = $AimPivot/Muzzle
 @onready var aim_ray: RayCast2D = $AimPivot/AimRay
@@ -63,6 +74,9 @@ var _recoil := 0.0
 const LIGHT_TEX_HALF := 128.0
 var _light: PointLight2D
 var _light_time := 0.0
+
+## Clock driving the heartbeat tint.
+var _pulse_time := 0.0
 
 
 func _ready() -> void:
@@ -86,6 +100,7 @@ func _process(delta: float) -> void:
 	_update_aim()
 	_update_recoil(delta)
 	_update_light(delta)
+	_update_pulse(delta)
 	_handle_shooting()
 	_handle_weapon_input()
 
@@ -133,6 +148,27 @@ func _update_light(delta: float) -> void:
 	_light.texture_scale = maxf(radius, 1.0) / LIGHT_TEX_HALF
 	_light.color = light_color
 	_light.energy = light_energy * (1.0 + light_flicker * 0.5 * wobble)
+
+
+## Drive the heartbeat tint on the sprite. The waveform is two smooth bumps per
+## cycle — the classic lub-dub — followed by a long rest, rather than a plain sine,
+## so it reads as a living pulse instead of a glow slowly oscillating.
+func _update_pulse(delta: float) -> void:
+	if not pulse_enabled:
+		return
+	_pulse_time += delta
+	var phase := fposmod(_pulse_time * pulse_rate, 1.0)
+	var beat := _beat_bump(phase, 0.10, 0.10) + 0.6 * _beat_bump(phase, 0.32, 0.12)
+	sprite.modulate = Color.WHITE.lerp(pulse_color, clampf(beat, 0.0, 1.0) * pulse_strength)
+
+
+## One smooth thump of the beat waveform: 1 at `centre`, cosine-easing to 0 at
+## `width` away, flat 0 outside. Zero slope at both ends, so thumps never snap.
+func _beat_bump(phase: float, centre: float, width: float) -> float:
+	var d := absf(phase - centre) / width
+	if d >= 1.0:
+		return 0.0
+	return 0.5 + 0.5 * cos(d * PI)
 
 
 ## Set the light's base radius (px). Convenience for upgrades/pickups/effects that

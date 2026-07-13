@@ -2,8 +2,9 @@ extends Node
 ## Verifies the inventory/map + fog-of-war feature end to end against the REAL
 ## dungeon scene:
 ##   - EventBus.map_generated fires with room + corridor data.
-##   - Non-start rooms build a Shroud (fog) node; the start room does not (the
-##     player spawns in it, so it begins revealed / is_discovered).
+##   - Non-start rooms start invisible (fog of war: not rendered until entered);
+##     the start room is visible (the player spawns in it, so it begins
+##     revealed / is_discovered).
 ##   - Owned-item accessors used by the inventory screen return sane data.
 ##   godot --headless --path <proj> res://tests/map_fog_test.tscn
 
@@ -39,17 +40,17 @@ func _physics_process(_delta: float) -> void:
 		if (room["rect"] as Rect2).get_area() <= 0.0:
 			rect_ok = false
 
-	# Fog: start revealed (no shroud), other rooms shrouded until entered.
+	# Fog: start revealed (visible), other rooms hidden until entered.
 	var start_revealed := false
 	var others_shrouded := true
 	var others := 0
 	for child in _dungeon.get_children():
 		if child is RoomDef:
 			if child.type == DungeonGenerator.RoomType.START:
-				start_revealed = child.is_discovered and child.get_node_or_null("Shroud") == null
+				start_revealed = child.is_discovered and child.visible
 			else:
 				others += 1
-				if not child.is_discovered and child.get_node_or_null("Shroud") == null:
+				if not child.is_discovered and child.visible:
 					others_shrouded = false
 	var fog_ok: bool = start_revealed and others_shrouded and others >= 1
 
