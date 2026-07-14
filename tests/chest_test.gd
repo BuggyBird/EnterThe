@@ -18,15 +18,12 @@ var _gold_after_open := -1
 func _ready() -> void:
 	GameState.reset_gold()
 
-	# (1) Enemy death -> coins scatter at the death spot.
+	# (1) Enemy death -> coins scatter at the death spot. The spawn is DEFERRED
+	# (coins appear next idle frame), so we verify the drop in _physics_process.
 	var dummy: Node2D = load("res://actors/enemies/dummy/dummy.tscn").instantiate()
 	dummy.position = Vector2(600, 600)   # far corner, away from the player
 	add_child(dummy)
 	dummy.get_node("Health").take_damage(DamageInfo.new(999.0, self, Vector2.ZERO))
-	var coins := _coins()
-	_drop_ok = coins.size() >= GameState.COINS_PER_KILL_MIN
-	for c in coins:
-		c.queue_free()   # keep them away from the rest of the test
 
 	# (2) A coin on top of the player is collected on contact.
 	var player: Player = load("res://actors/player/player.tscn").instantiate()
@@ -46,6 +43,16 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	_frames += 1
+	if _frames == 3:
+		# The deferred coin burst has landed at the corpse (near 600,600).
+		# Count & clear only those, leaving the collect-coin at the origin.
+		var far_coins := []
+		for c in _coins():
+			if c.global_position.distance_to(Vector2(600, 600)) < 60.0:
+				far_coins.append(c)
+		_drop_ok = far_coins.size() >= GameState.COINS_PER_KILL_MIN
+		for c in far_coins:
+			c.queue_free()
 	if _frames == 10:
 		# Coin contact has resolved by now.
 		_collect_ok = GameState.gold >= 5

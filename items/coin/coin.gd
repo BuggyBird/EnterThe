@@ -11,13 +11,16 @@ extends Area2D
 
 var _vel := Vector2.ZERO
 ## Float position, drawn rounded so the tiny sprite never shimmers sub-pixel.
+## Latched on the first physics frame, NOT in _ready: the spawner sets our
+## global_position AFTER add_child (so after _ready), and reading it too early
+## would snap the coin back to the origin instead of the drop point.
 var _pos := Vector2.ZERO
+var _pos_ready := false
 var _age := 0.0
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
-	_pos = global_position
 	_vel = Vector2.RIGHT.rotated(RNG.randf_range(0.0, TAU)) \
 		* RNG.randf_range(scatter_speed_min, scatter_speed_max)
 	var anim: AnimatedSprite2D = $Anim
@@ -26,6 +29,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not _pos_ready:
+		_pos = global_position   # the spawner's position is set by now
+		_pos_ready = true
 	_age += delta
 	if _age >= lifetime:
 		queue_free()

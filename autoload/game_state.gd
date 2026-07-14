@@ -50,18 +50,26 @@ func reset_gold() -> void:
 	EventBus.gold_changed.emit(gold)
 
 
-## Every slain enemy bursts into a few coins at its death spot. entity_died is
-## emitted while the entity is still in the tree, so its position is valid.
+## Every slain enemy bursts into a few coins at its death spot. entity_died can
+## fire mid-physics-flush (a projectile killing it), where adding a collision-
+## shaped Area2D child throws "Can't change this state while flushing queries".
+## So we capture the death position NOW (entity is still in the tree) and defer
+## the actual spawn to the next idle frame, once the flush is done.
 func _on_entity_died(entity: Node) -> void:
 	if entity is Player or not entity is Node2D:
 		return
+	var count := RNG.randi_range(COINS_PER_KILL_MIN, COINS_PER_KILL_MAX)
+	_spawn_coins.call_deferred((entity as Node2D).global_position, count)
+
+
+func _spawn_coins(at: Vector2, count: int) -> void:
 	var scene := get_tree().current_scene
 	if scene == null:
 		return
-	for i in RNG.randi_range(COINS_PER_KILL_MIN, COINS_PER_KILL_MAX):
+	for i in count:
 		var coin: Node2D = load(COIN_SCENE_PATH).instantiate()
 		scene.add_child(coin)
-		coin.global_position = (entity as Node2D).global_position
+		coin.global_position = at
 
 
 func unlock_weapon(id: StringName) -> void:
