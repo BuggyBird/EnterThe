@@ -87,9 +87,14 @@ var _pulse_time := 0.0
 
 
 func _ready() -> void:
+	add_to_group(&"player")   # how monsters (and future systems) find us
 	# Wire component refs in code (reliable in hand-authored scenes).
 	hurtbox.health_component = health
 	health.died.connect(_on_died)
+	# Broadcast health for the HUD (it never references us directly).
+	health.health_changed.connect(
+		func(current: float, maximum: float): EventBus.player_health_changed.emit(current, maximum))
+	EventBus.player_health_changed.emit(health.current_health, health.max_health)
 	_base_weapon_scale = weapon_sprite.scale
 	_base_weapon_pos = weapon_sprite.position
 	# Show the held weapon's sprite and keep it current as weapons switch. The
