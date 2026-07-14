@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://uwq53jdyrq4g" path="res://systems/weapon_data.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://xsvudpmy50to" path="res://projectiles/projectile.tscn" id="2"]
 [ext_resource type="Resource" uid="uid://xsvtxmka50to" path="res://projectiles/data/basic_bolt.tres" id="3"]
-[ext_resource type="Texture2D" uid="uid://chd6waw4scc32" path="res://Assets/weapons/AssaultRifles/5AssaultRifle05.png" id="4_rlw2g"]
+[ext_resource type="Texture2D" uid="uid://cjo5ircdfqfkg" path="res://Assets/weapons/Funny/longbow.png" id="4_rlw2g"]
 
 [resource]
 script = ExtResource("1")

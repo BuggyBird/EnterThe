@@ -62,6 +62,13 @@ var can_roll := true
 @onready var health: HealthComponent = $Health
 @onready var hurtbox: HurtboxComponent = $Hurtbox
 
+## How much the held sprite grows at full charge (charge weapons only).
+const CHARGE_GROW := 0.25
+## How far the held sprite pulls back at full draw (channel weapons, px).
+const CHANNEL_PULL := 6.0
+## Aim laser opacity — subtle on purpose, so projectiles stay readable over it.
+const AIM_LINE_ALPHA := 0.22
+
 ## The scene's designed sprite scale; each weapon's `sprite_scale` multiplies this.
 var _base_weapon_scale := Vector2.ONE
 ## The held weapon's resting local position (recoil kicks back from here).
@@ -101,7 +108,7 @@ func _process(delta: float) -> void:
 	_update_recoil(delta)
 	_update_light(delta)
 	_update_pulse(delta)
-	_handle_shooting()
+	_handle_shooting(delta)
 	_handle_weapon_input()
 
 
@@ -215,9 +222,10 @@ func _on_weapon_equipped(data: WeaponData) -> void:
 	weapon_sprite.texture = data.sprite
 	weapon_sprite.modulate = data.color
 	weapon_sprite.scale = _base_weapon_scale * data.sprite_scale
-	# Tint the aim laser to match the equipped weapon.
+	# Tint the aim laser to match the equipped weapon. Kept faint so it guides
+	# the eye without drowning out the projectiles flying along it.
 	var laser := data.color
-	laser.a = 0.85
+	laser.a = AIM_LINE_ALPHA
 	aim_line.default_color = laser
 
 
@@ -229,10 +237,15 @@ func _on_weapon_fired() -> void:
 
 ## Ease the held weapon back to rest each frame. The kick pushes it along the aim
 ## pivot's -x (back toward the player) plus a small muzzle-rise tilt, signed by the
-## flip so it reads correctly whether aiming left or right.
+## flip so it reads correctly whether aiming left or right. A channel weapon's
+## draw adds its own pull-back so the bow visibly winds up before loosing.
 func _update_recoil(delta: float) -> void:
 	_recoil = maxf(_recoil - recoil_return * delta, 0.0)
-	weapon_sprite.position = _base_weapon_pos - Vector2(_recoil, 0.0)
+	var pull := _recoil
+	var weapon: Weapon = weapon_holder.weapon
+	if weapon != null and weapon.data != null and weapon.data.channel_time > 0.0:
+		pull += CHANNEL_PULL * weapon.channel_ratio()
+	weapon_sprite.position = _base_weapon_pos - Vector2(pull, 0.0)
 	var tilt_sign := 1.0 if weapon_sprite.flip_v else -1.0
 	weapon_sprite.rotation = tilt_sign * _recoil * recoil_tilt
 
@@ -266,9 +279,24 @@ func start_roll_cooldown() -> void:
 
 ## Fire the held weapon while the shoot input is active. Independent of the
 ## movement state machine so the player can shoot while moving, idle, or rolling.
-func _handle_shooting() -> void:
+## Charge weapons (crossbow) bank shots while held and loose them on release;
+## everything else fires on press/hold as before.
+func _handle_shooting(delta: float) -> void:
 	var current: WeaponData = weapon_holder.get_current_data()
 	if current == null:
+		return
+	# Keep the weapon's aim tracking live: salvos follow the cursor mid-burst
+	# and a channelled arrow looses at where you're aiming when the draw ends.
+	weapon_holder.weapon.update_burst_track(aim_direction, muzzle.global_position)
+	if current.charge_max_shots > 0:
+		var weapon := weapon_holder.weapon
+		if Input.is_action_pressed("shoot"):
+			weapon.charge(delta)
+		elif Input.is_action_just_released("shoot"):
+			weapon.release_charge(aim_direction, muzzle.global_position)
+		# Grow the held sprite with the banked charge so the wind-up is readable.
+		weapon_sprite.scale = _base_weapon_scale * current.sprite_scale \
+			* (1.0 + CHARGE_GROW * weapon.charge_ratio())
 		return
 	var wants_to_fire := (
 		Input.is_action_pressed("shoot") if current.auto

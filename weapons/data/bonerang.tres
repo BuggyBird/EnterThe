@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://c6ipmr5whvsaa"]
+
+[ext_resource type="Script" uid="uid://uwq53jdyrq4g" path="res://systems/weapon_data.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://xsvudpmy50to" path="res://projectiles/projectile.tscn" id="2"]
+[ext_resource type="Resource" uid="uid://c1rd5k0xn3fx4" path="res://projectiles/data/boomerang.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://cvij7wjgl6dtk" path="res://Assets/weapons/Funny/boomerang.png" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"bonerang"
+display_name = "Bonerang"
+description = "Carved from a hero's shin. Bends left, then right — land both and the third throw takes two hands. Misses don't count."
+projectile_scene = ExtResource("2")
+projectile_data = ExtResource("3")
+fire_rate = 1.4
+auto = false
+curve_combo = true
+mag_size = 5
+reload_time = 1.3
+max_reserve = 30
+color = Color(0.93, 0.9, 0.82, 1)
+sprite = ExtResource("4")
+sprite_scale = 2.4
+tags = Array[StringName]([&"spectral", &"thrown", &"curve"])

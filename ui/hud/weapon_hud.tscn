@@ -18,3 +18,11 @@ offset_top = 334.0
 offset_right = 260.0
 offset_bottom = 352.0
 text = "12 / ∞"
+
+[node name="GoldLabel" type="Label" parent="."]
+modulate = Color(0.98, 0.8, 0.35, 1)
+offset_left = 14.0
+offset_top = 298.0
+offset_right = 260.0
+offset_bottom = 316.0
+text = "0 g"

@@ -18,8 +18,25 @@ extends Resource
 @export_group("Firing")
 @export var fire_rate: float = 7.0        ## Shots per second.
 @export var auto: bool = true             ## Hold to fire vs. one shot per click.
+## Draw-up delay: the trigger starts a channel and the shot looses this many
+## seconds later, aimed at where the cursor is THEN. The held sprite pulls back
+## while drawing (longbow). 0 = instant.
+@export var channel_time: float = 0.0
 @export var pellets: int = 1              ## Projectiles per shot (>1 = shotgun).
 @export var spread_degrees: float = 0.0   ## Total scatter cone for the pellets.
+
+@export_group("Charging")
+## >0 makes this a charge weapon: hold the trigger to bank up to this many
+## shots, release to loose them as a rapid salvo — one after another (crossbow).
+@export var charge_max_shots: int = 0
+@export var charge_time_per_shot: float = 0.35   ## Hold time to bank each extra shot.
+@export var charge_burst_interval: float = 0.07  ## Gap between the salvo's shots (s).
+
+@export_group("Combo")
+## Curving weapons only (projectile curve_degrees != 0): landed hits advance a
+## throw cycle — hit 0 throws a LEFT curver, 1 a RIGHT curver, 2 BOTH hands at
+## once, then wraps. Missing repeats the same throw (bonerang).
+@export var curve_combo: bool = false
 
 @export_group("Ammo")
 @export var mag_size: int = 12            ## Shots per clip before reloading.

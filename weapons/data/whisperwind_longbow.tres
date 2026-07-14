@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://beq58kcxvm2kr"]
+
+[ext_resource type="Script" uid="uid://uwq53jdyrq4g" path="res://systems/weapon_data.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://xsvudpmy50to" path="res://projectiles/projectile.tscn" id="2"]
+[ext_resource type="Resource" uid="uid://bj0vcpu83b7f0" path="res://projectiles/data/spectral_arrow.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://cjo5ircdfqfkg" path="res://Assets/weapons/Funny/longbow.png" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"whisperwind_longbow"
+display_name = "Whisperwind Longbow"
+description = "The farther the whisper travels, the harder it lands. Rewards keeping your distance."
+projectile_scene = ExtResource("2")
+projectile_data = ExtResource("3")
+fire_rate = 1.2
+auto = false
+channel_time = 0.6
+mag_size = 8
+reload_time = 1.6
+max_reserve = 40
+color = Color(0.59, 0.93, 1, 1)
+sprite = ExtResource("4")
+sprite_scale = 3.0
+tags = Array[StringName]([&"spectral", &"bow"])

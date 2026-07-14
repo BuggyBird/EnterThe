@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ProjectileData" format=3 uid="uid://bj0vcpu83b7f0"]
+
+[ext_resource type="Script" uid="uid://c1mk0t0kxhusl" path="res://systems/projectile_data.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://b77y3fqb00ww5" path="res://Assets/weapons/Funny/projectile_arrow.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+speed = 950.0
+lifetime = 1.8
+damage = 19.0
+knockback = 170.0
+distance_damage_per_100 = 0.35
+color = Color(0.59, 0.93, 1, 1)
+texture = ExtResource("2")

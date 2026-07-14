@@ -1,0 +1,285 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://kf54gdu4ini3"]
+
+[ext_resource type="Texture2D" uid="uid://dopt02ouq2yfs" path="res://Assets/Chests/chest_common.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://b8bagp56nnxkb" path="res://Assets/Chests/chest_rare.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://q24sg6v5cj8k" path="res://Assets/Chests/chest_epic.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://bgdtykd8v0qlq" path="res://Assets/Chests/chest_legendary.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://ddweyoh50tq8w" path="res://Assets/Chests/chest_mythic.png" id="5"]
+
+[sub_resource type="AtlasTexture" id="Atlas_common_0"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_common_1"]
+atlas = ExtResource("1")
+region = Rect2(26, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_common_2"]
+atlas = ExtResource("1")
+region = Rect2(52, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_common_3"]
+atlas = ExtResource("1")
+region = Rect2(78, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_common_4"]
+atlas = ExtResource("1")
+region = Rect2(104, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_common_5"]
+atlas = ExtResource("1")
+region = Rect2(130, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_epic_0"]
+atlas = ExtResource("3")
+region = Rect2(0, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_epic_1"]
+atlas = ExtResource("3")
+region = Rect2(26, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_epic_2"]
+atlas = ExtResource("3")
+region = Rect2(52, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_epic_3"]
+atlas = ExtResource("3")
+region = Rect2(78, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_epic_4"]
+atlas = ExtResource("3")
+region = Rect2(104, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_epic_5"]
+atlas = ExtResource("3")
+region = Rect2(130, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_legendary_0"]
+atlas = ExtResource("4")
+region = Rect2(0, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_legendary_1"]
+atlas = ExtResource("4")
+region = Rect2(26, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_legendary_2"]
+atlas = ExtResource("4")
+region = Rect2(52, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_legendary_3"]
+atlas = ExtResource("4")
+region = Rect2(78, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_legendary_4"]
+atlas = ExtResource("4")
+region = Rect2(104, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_legendary_5"]
+atlas = ExtResource("4")
+region = Rect2(130, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_mythic_0"]
+atlas = ExtResource("5")
+region = Rect2(0, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_mythic_1"]
+atlas = ExtResource("5")
+region = Rect2(26, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_mythic_2"]
+atlas = ExtResource("5")
+region = Rect2(52, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_mythic_3"]
+atlas = ExtResource("5")
+region = Rect2(78, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_mythic_4"]
+atlas = ExtResource("5")
+region = Rect2(104, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_mythic_5"]
+atlas = ExtResource("5")
+region = Rect2(130, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_rare_0"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_rare_1"]
+atlas = ExtResource("2")
+region = Rect2(26, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_rare_2"]
+atlas = ExtResource("2")
+region = Rect2(52, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_rare_3"]
+atlas = ExtResource("2")
+region = Rect2(78, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_rare_4"]
+atlas = ExtResource("2")
+region = Rect2(104, 0, 26, 24)
+
+[sub_resource type="AtlasTexture" id="Atlas_rare_5"]
+atlas = ExtResource("2")
+region = Rect2(130, 0, 26, 24)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_common_0")
+}],
+"loop": true,
+"name": &"common_closed",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_common_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_common_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_common_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_common_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_common_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_common_5")
+}],
+"loop": false,
+"name": &"common_open",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_epic_0")
+}],
+"loop": true,
+"name": &"epic_closed",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_epic_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_epic_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_epic_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_epic_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_epic_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_epic_5")
+}],
+"loop": false,
+"name": &"epic_open",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_legendary_0")
+}],
+"loop": true,
+"name": &"legendary_closed",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_legendary_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_legendary_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_legendary_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_legendary_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_legendary_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_legendary_5")
+}],
+"loop": false,
+"name": &"legendary_open",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_mythic_0")
+}],
+"loop": true,
+"name": &"mythic_closed",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_mythic_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_mythic_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_mythic_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_mythic_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_mythic_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_mythic_5")
+}],
+"loop": false,
+"name": &"mythic_open",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_rare_0")
+}],
+"loop": true,
+"name": &"rare_closed",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Atlas_rare_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_rare_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_rare_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_rare_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_rare_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("Atlas_rare_5")
+}],
+"loop": false,
+"name": &"rare_open",
+"speed": 10.0
+}]
