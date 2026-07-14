@@ -13,15 +13,23 @@ extends Area2D
 ## and grant wall bounces. NOTE for M4: these are PLAYER buffs — when enemies
 ## start firing this scene, gate the Upgrades reads behind a team flag.
 
+## Emitted once, on this projectile's FIRST damaging hit. Weapons listen to it
+## for hit-driven mechanics (the bonerang's throw combo).
+signal hit_landed()
+
 const HIT_EFFECT := preload("res://effects/hit_effect.tscn")
 
 var data: ProjectileData
 var direction: Vector2 = Vector2.RIGHT
+## Which side a curving projectile steers toward: +1 right, -1 left, 0 straight.
+## Set by the Weapon after setup() (alternates per pellet for boomerangs).
+var curve_sign: float = 0.0
 
 var _spawn_position: Vector2
 var _prev_position: Vector2
 var _time_alive: float = 0.0
 var _pierced: int = 0
+var _hit_reported: bool = false
 var _bounces_left: int = 0
 var _bouncing: bool = false
 var _radius: float = 4.0
@@ -38,6 +46,9 @@ func setup(projectile_data: ProjectileData, dir: Vector2, spawn_position: Vector
 func _ready() -> void:
 	if data == null:
 		push_warning("Projectile spawned without data; freeing.")
+		# queue_free is deferred — physics would still tick us once this frame
+		# and crash on the missing data, so switch processing off first.
+		set_physics_process(false)
 		queue_free()
 		return
 	global_position = _spawn_position
@@ -56,8 +67,16 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if data == null:
+		return
+	if data.curve_degrees != 0.0 and curve_sign != 0.0:
+		direction = direction.rotated(deg_to_rad(data.curve_degrees) * curve_sign * delta)
 	_prev_position = global_position
 	global_position += direction * _speed * delta
+	if data.spin_speed != 0.0:
+		rotation += data.spin_speed * (curve_sign if curve_sign != 0.0 else 1.0) * delta
+	elif data.curve_degrees != 0.0:
+		rotation = direction.angle()
 	_time_alive += delta
 	if _time_alive >= data.lifetime:
 		_despawn()
@@ -65,12 +84,25 @@ func _physics_process(delta: float) -> void:
 
 func _on_area_entered(area: Area2D) -> void:
 	if area is HurtboxComponent:
-		var dmg := data.damage * Upgrades.damage_mult
+		var dmg := data.damage * Upgrades.damage_mult * _distance_damage_mult()
 		area.take_hit(DamageInfo.new(dmg, self, direction * data.knockback))
+		if not _hit_reported:
+			_hit_reported = true
+			hit_landed.emit()
 		_spawn_hit_effect()
 		_pierced += 1
 		if _pierced > data.pierce + Upgrades.pierce_bonus:
 			_despawn()
+
+
+## Longbow-style range reward: damage scales with the distance travelled from
+## the muzzle to the impact point, capped so it can't grow without bound.
+func _distance_damage_mult() -> float:
+	if data.distance_damage_per_100 <= 0.0:
+		return 1.0
+	var travelled := _spawn_position.distance_to(global_position)
+	return minf(1.0 + data.distance_damage_per_100 * travelled / 100.0,
+		data.distance_damage_max_mult)
 
 
 ## Burst of placeholder particles at the impact point, tinted like the bullet.
@@ -122,7 +154,13 @@ func _despawn() -> void:
 	queue_free()
 
 
-## Placeholder visual: a filled circle tinted by the data. Real art later.
+## Visual: the data's sprite if it has one (drawn in its authored colors),
+## otherwise a placeholder circle tinted by the data.
 func _draw() -> void:
-	if data:
+	if data == null:
+		return
+	if data.texture:
+		var size := data.texture.get_size() * data.texture_scale
+		draw_texture_rect(data.texture, Rect2(-size * 0.5, size), false)
+	else:
 		draw_circle(Vector2.ZERO, _radius, data.color)

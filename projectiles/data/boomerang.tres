@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ProjectileData" format=3 uid="uid://c1rd5k0xn3fx4"]
+
+[ext_resource type="Script" uid="uid://c1mk0t0kxhusl" path="res://systems/projectile_data.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cvij7wjgl6dtk" path="res://Assets/weapons/Funny/boomerang.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+speed = 380.0
+lifetime = 1.6
+damage = 16.0
+knockback = 190.0
+pierce = 2
+curve_degrees = 110.0
+radius = 7.0
+color = Color(0.93, 0.9, 0.82, 1)
+texture = ExtResource("2")
+spin_speed = 18.0

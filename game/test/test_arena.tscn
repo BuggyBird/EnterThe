@@ -1,12 +1,15 @@
 [gd_scene format=3 uid="uid://xsvtwpc3f0to"]
 
 [ext_resource type="PackedScene" uid="uid://xsvudi8fjrtn" path="res://actors/player/player.tscn" id="1"]
-[ext_resource type="PackedScene" uid="uid://c0plr0dummy001" path="res://actors/enemies/dummy/dummy.tscn" id="2"]
-[ext_resource type="PackedScene" uid="uid://c0plr0whud0001" path="res://ui/hud/weapon_hud.tscn" id="3"]
-[ext_resource type="PackedScene" uid="uid://c0plr0wpick001" path="res://weapons/pickup/weapon_pickup.tscn" id="4"]
-[ext_resource type="Resource" path="res://weapons/data/gravedigger.tres" id="5"]
-[ext_resource type="Resource" path="res://weapons/data/wisp.tres" id="6"]
-[ext_resource type="Resource" path="res://weapons/data/bone_railbolt.tres" id="7"]
+[ext_resource type="PackedScene" uid="uid://xsvt0sk240to" path="res://actors/enemies/dummy/dummy.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://xsvukfss50to" path="res://ui/hud/weapon_hud.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://xsvukngrp0to" path="res://weapons/pickup/weapon_pickup.tscn" id="4"]
+[ext_resource type="Resource" uid="uid://xsvukepp1eto" path="res://weapons/data/gravedigger.tres" id="5"]
+[ext_resource type="Resource" uid="uid://xsvukug8u0to" path="res://weapons/data/wisp.tres" id="6"]
+[ext_resource type="Resource" uid="uid://xsvuko7xq0to" path="res://weapons/data/bone_railbolt.tres" id="7"]
+[ext_resource type="Resource" uid="uid://c6ipmr5whvsaa" path="res://weapons/data/bonerang.tres" id="8"]
+[ext_resource type="Resource" uid="uid://beq58kcxvm2kr" path="res://weapons/data/whisperwind_longbow.tres" id="9"]
+[ext_resource type="Resource" uid="uid://btgrd2wlbfyl1" path="res://weapons/data/soulwood_repeater.tres" id="10"]
 
 [sub_resource type="RectangleShape2D" id="Wall_H"]
 size = Vector2(940, 20)
@@ -16,7 +19,7 @@ size = Vector2(20, 540)
 
 [node name="TestArena" type="Node2D" unique_id=760244873]
 
-[node name="WeaponHUD" parent="." instance=ExtResource("3")]
+[node name="WeaponHUD" parent="." unique_id=37594148 instance=ExtResource("3")]
 
 [node name="Floor" type="Polygon2D" parent="." unique_id=460514729]
 color = Color(0.09, 0.07, 0.12, 1)
@@ -49,23 +52,35 @@ default_color = Color(0.6, 0.5, 0.25, 1)
 [node name="Player" parent="." unique_id=28679426 instance=ExtResource("1")]
 position = Vector2(-27, -111)
 
-[node name="Dummy" parent="." instance=ExtResource("2")]
+[node name="Dummy" parent="." unique_id=1500790512 instance=ExtResource("2")]
 position = Vector2(220, -90)
 
-[node name="Dummy2" parent="." instance=ExtResource("2")]
+[node name="Dummy2" parent="." unique_id=1438182883 instance=ExtResource("2")]
 position = Vector2(280, 60)
 
-[node name="Dummy3" parent="." instance=ExtResource("2")]
+[node name="Dummy3" parent="." unique_id=2123132040 instance=ExtResource("2")]
 position = Vector2(120, 120)
 
-[node name="GravediggerPickup" parent="." instance=ExtResource("4")]
+[node name="GravediggerPickup" parent="." unique_id=441891133 instance=ExtResource("4")]
 position = Vector2(-220, -90)
 weapon_data = ExtResource("5")
 
-[node name="WispPickup" parent="." instance=ExtResource("4")]
+[node name="WispPickup" parent="." unique_id=2031264786 instance=ExtResource("4")]
 position = Vector2(-260, 60)
 weapon_data = ExtResource("6")
 
-[node name="RailboltPickup" parent="." instance=ExtResource("4")]
+[node name="RailboltPickup" parent="." unique_id=1383500265 instance=ExtResource("4")]
 position = Vector2(-140, 150)
 weapon_data = ExtResource("7")
+
+[node name="BonerangPickup" parent="." unique_id=155353930 instance=ExtResource("4")]
+position = Vector2(-340, -170)
+weapon_data = ExtResource("8")
+
+[node name="LongbowPickup" parent="." unique_id=1936949630 instance=ExtResource("4")]
+position = Vector2(-360, 150)
+weapon_data = ExtResource("9")
+
+[node name="RepeaterPickup" parent="." unique_id=1371094179 instance=ExtResource("4")]
+position = Vector2(-60, -190)
+weapon_data = ExtResource("10")

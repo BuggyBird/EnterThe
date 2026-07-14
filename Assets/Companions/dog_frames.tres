@@ -1,0 +1,53 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://bvfue7ajju2tg"]
+
+[ext_resource type="Texture2D" uid="uid://brgyjhb45q06d" path="res://Assets/Companions/owl_idle.png" id="1_mmv2l"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_khocm"]
+atlas = ExtResource("1_mmv2l")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k1i0h"]
+atlas = ExtResource("1_mmv2l")
+region = Rect2(24, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rvtgh"]
+atlas = ExtResource("1_mmv2l")
+region = Rect2(48, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8ewdr"]
+atlas = ExtResource("1_mmv2l")
+region = Rect2(72, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ueh77"]
+atlas = ExtResource("1_mmv2l")
+region = Rect2(96, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7e2ws"]
+atlas = ExtResource("1_mmv2l")
+region = Rect2(120, 0, 24, 24)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_khocm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k1i0h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rvtgh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8ewdr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ueh77")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7e2ws")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}]

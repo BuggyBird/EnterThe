@@ -5,11 +5,18 @@ extends CanvasLayer
 
 @onready var name_label: Label = $NameLabel
 @onready var ammo_label: Label = $AmmoLabel
+@onready var gold_label: Label = $GoldLabel
 
 
 func _ready() -> void:
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	EventBus.weapon_ammo_changed.connect(_on_ammo_changed)
+	EventBus.gold_changed.connect(_on_gold_changed)
+	_on_gold_changed(GameState.gold)
+
+
+func _on_gold_changed(total: int) -> void:
+	gold_label.text = "%d g" % total
 
 
 func _on_weapon_equipped(weapon_data: Resource) -> void:

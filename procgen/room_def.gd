@@ -41,10 +41,14 @@ const PORTAL_Z := 10                               ## Above floor + wall art.
 
 const DUMMY_SCENE := "res://actors/enemies/dummy/dummy.tscn"
 const PICKUP_SCENE := "res://weapons/pickup/weapon_pickup.tscn"
+const CHEST_SCENE := "res://items/chest/chest.tscn"
 const TREASURE_POOL := [
-	"res://weapons/data/gravedigger.tres",
-	"res://weapons/data/wisp.tres",
+	#"res://weapons/data/gravedigger.tres",
+	#"res://weapons/data/wisp.tres",
 	"res://weapons/data/bone_railbolt.tres",
+	"res://weapons/data/bonerang.tres",
+	"res://weapons/data/whisperwind_longbow.tres",
+	"res://weapons/data/soulwood_repeater.tres",
 ]
 
 ## Mirrors DungeonGenerator.RoomType so a scene can declare its pool in the Inspector
@@ -597,9 +601,12 @@ func _clear_room() -> void:
 
 
 func _spawn_treasure() -> void:
-	var pickup: Node2D = load(PICKUP_SCENE).instantiate()
-	pickup.weapon_data = load(RNG.pick(TREASURE_POOL))
-	add_child(pickup)
+	# A locked chest instead of loot in the open: the player pays gold (dropped
+	# by enemies) to open it. Rarity rolls on the same weights as perks.
+	var chest: Node2D = load(CHEST_SCENE).instantiate()
+	chest.rarity = int(RNG.pick_weighted(range(Upgrades.RARITY_WEIGHTS.size()), Upgrades.RARITY_WEIGHTS))
+	chest.loot = load(RNG.pick(TREASURE_POOL))
+	add_child(chest)
 
 
 func _set_doors_locked(locked: bool) -> void:

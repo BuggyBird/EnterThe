@@ -30,6 +30,10 @@ signal player_xp_changed(xp: int, to_next: int, level: int)  ## XP pool after a 
 signal player_leveled_up(new_level: int)                     ## Crossed a threshold.
 signal upgrade_chosen(id: StringName)                        ## A card was picked.
 
+# --- Gold ---------------------------------------------------------------------
+signal gold_changed(total: int)        ## The run's coin purse after any change.
+signal chest_opened(rarity: int)       ## A chest was paid for and is opening.
+
 # --- Run / flow ---------------------------------------------------------------
 signal room_entered(room: Node)
 signal room_cleared(room: Node)

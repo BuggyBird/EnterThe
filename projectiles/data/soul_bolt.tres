@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ProjectileData" format=3]
+
+[ext_resource type="Script" uid="uid://c1mk0t0kxhusl" path="res://systems/projectile_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Assets/weapons/Funny/projectile_bolt.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+speed = 820.0
+lifetime = 1.4
+damage = 9.0
+knockback = 120.0
+pierce = 1
+radius = 4.0
+color = Color(0.34, 0.88, 0.79, 1)
+texture = ExtResource("2")
+texture_scale = 1.0
