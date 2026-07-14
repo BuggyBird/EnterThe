@@ -40,6 +40,12 @@ const PORTAL_LOCKED_TINT := Color(0.42, 0.36, 0.55)   ## Dimmed swirl while seal
 const PORTAL_Z := 10                               ## Above floor + wall art.
 
 const DUMMY_SCENE := "res://actors/enemies/dummy/dummy.tscn"
+const MONSTER_SCENE := "res://actors/enemies/monster.tscn"
+const MONSTER_POOL := [
+	"res://resources/monsters/rat_gunner.tres",
+	"res://resources/monsters/rat_plague.tres",
+	"res://resources/monsters/rat_warlock.tres",
+]
 const PICKUP_SCENE := "res://weapons/pickup/weapon_pickup.tscn"
 const CHEST_SCENE := "res://items/chest/chest.tscn"
 const TREASURE_POOL := [
@@ -573,12 +579,16 @@ func _begin_encounter() -> void:
 	var is_boss := type == DungeonGenerator.RoomType.BOSS
 	var count := 1 if is_boss else RNG.randi_range(2, 4)
 	for i in count:
-		var enemy: Node2D = load(DUMMY_SCENE).instantiate()
-		enemy.position = _spawn_points[i % _spawn_points.size()]
-		if is_boss:
-			enemy.scale = Vector2(2.2, 2.2)
-			enemy.get_node("Health").max_health = 220.0
+		var enemy: Node2D = load(MONSTER_SCENE).instantiate()
+		enemy.data = load(RNG.pick(MONSTER_POOL))
+		enemy.position = _free_spawn_position(_spawn_points[i % _spawn_points.size()],
+			30.0 if is_boss else 14.0)
 		add_child(enemy)
+		if is_boss:
+			enemy.scale *= 2.2
+			var hc: HealthComponent = enemy.get_node("Health")
+			hc.max_health = 220.0
+			hc.current_health = 220.0
 		enemy.get_node("Health").died.connect(_on_enemy_died)
 		_alive_enemies += 1
 
@@ -586,6 +596,29 @@ func _begin_encounter() -> void:
 		_clear_room()
 	else:
 		_set_doors_locked(true)
+
+
+## Monsters are physics bodies (dummies weren't): a spawn point that overlaps
+## a wall/pillar would depenetrate the body on its first physics frame — a
+## visible "teleport". Probe the spot and step outward until it's clear.
+func _free_spawn_position(local_pos: Vector2, radius: float) -> Vector2:
+	var space := get_world_2d().direct_space_state
+	var shape := CircleShape2D.new()
+	shape.radius = radius
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = shape
+	params.collision_mask = 1  # World
+	for ring in 6:
+		var offsets: Array[Vector2] = [Vector2.ZERO]
+		if ring > 0:
+			offsets = []
+			for k in 8:
+				offsets.append(Vector2.RIGHT.rotated(TAU * k / 8.0) * (ring * 20.0))
+		for off in offsets:
+			params.transform = Transform2D(0.0, to_global(local_pos + off))
+			if space.intersect_shape(params, 1).is_empty():
+				return local_pos + off
+	return local_pos
 
 
 func _on_enemy_died() -> void:

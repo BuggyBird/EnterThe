@@ -24,6 +24,11 @@ var direction: Vector2 = Vector2.RIGHT
 ## Which side a curving projectile steers toward: +1 right, -1 left, 0 straight.
 ## Set by the Weapon after setup() (alternates per pellet for boomerangs).
 var curve_sign: float = 0.0
+## Team flag, set BEFORE add_child. true = player shot (default, PlayerHitbox
+## layer, buffed by Upgrades). false = enemy shot: re-layered to EnemyHitbox
+## vs World+PlayerHurtbox and fired at raw data stats — player upgrades must
+## never buff the bullets flying AT the player.
+var friendly: bool = true
 
 var _spawn_position: Vector2
 var _prev_position: Vector2
@@ -54,9 +59,16 @@ func _ready() -> void:
 	global_position = _spawn_position
 	_prev_position = _spawn_position
 	rotation = direction.angle()
-	_radius = data.radius * Upgrades.bullet_size_mult
-	_speed = data.speed * Upgrades.bullet_speed_mult
-	_bounces_left = Upgrades.bounces
+	if friendly:
+		_radius = data.radius * Upgrades.bullet_size_mult
+		_speed = data.speed * Upgrades.bullet_speed_mult
+		_bounces_left = Upgrades.bounces
+	else:
+		_radius = data.radius
+		_speed = data.speed
+		_bounces_left = 0
+		collision_layer = 16   # EnemyHitbox
+		collision_mask = 33    # World + PlayerHurtbox
 	# Own our collision shape so per-projectile radius never mutates a shared one.
 	var shape := CircleShape2D.new()
 	shape.radius = _radius
@@ -84,14 +96,18 @@ func _physics_process(delta: float) -> void:
 
 func _on_area_entered(area: Area2D) -> void:
 	if area is HurtboxComponent:
-		var dmg := data.damage * Upgrades.damage_mult * _distance_damage_mult()
+		var dmg := data.damage * _distance_damage_mult()
+		var pierce_budget := data.pierce
+		if friendly:
+			dmg *= Upgrades.damage_mult
+			pierce_budget += Upgrades.pierce_bonus
 		area.take_hit(DamageInfo.new(dmg, self, direction * data.knockback))
 		if not _hit_reported:
 			_hit_reported = true
 			hit_landed.emit()
 		_spawn_hit_effect()
 		_pierced += 1
-		if _pierced > data.pierce + Upgrades.pierce_bonus:
+		if _pierced > pierce_budget:
 			_despawn()
 
 

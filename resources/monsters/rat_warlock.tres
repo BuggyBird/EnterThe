@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="Script" path="res://systems/monster_data.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://xsvudpmy50to" path="res://projectiles/projectile.tscn" id="2"]
+[ext_resource type="Resource" path="res://projectiles/data/enemy_hex.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Warlock Rat"
+max_health = 28.0
+move_speed = 85.0
+tint = Color(0.82, 0.6, 1, 1)
+body_scale = 0.9
+preferred_range = 280.0
+walk_time_min = 0.35
+walk_time_max = 0.7
+pause_time_min = 0.6
+pause_time_max = 1.1
+fire_rate = 1.2
+windup_time = 0.3
+pellets = 1
+aim_error_degrees = 6.0
+projectile_scene = ExtResource("2")
+projectile_data = ExtResource("3")

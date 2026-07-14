@@ -28,7 +28,8 @@
       "Bash(python \"C:\\\\Users\\\\siebe\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-siebe-Documents-claude-test\\\\c5068587-89ad-4eab-b9fd-a8437c533f13\\\\scratchpad\\\\gen_owl.py\")",
       "Bash(timeout 60 \"C:/Users/siebe/Downloads/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe\" --headless --path . --script \"C:/Users/siebe/AppData/Local/Temp/claude/C--Users-siebe-Documents-claude-test/c5068587-89ad-4eab-b9fd-a8437c533f13/scratchpad/check_owl.gd\")",
       "Bash(timeout 120 \"C:/Users/siebe/Downloads/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe\" --headless --path . --import)",
-      "Bash(timeout 120 \"C:/Users/siebe/Downloads/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe\" --headless --path . res://tests/dungeon_boot_test.tscn)"
+      "Bash(timeout 120 \"C:/Users/siebe/Downloads/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe\" --headless --path . res://tests/dungeon_boot_test.tscn)",
+      "Bash(python -)"
     ]
   }
 }
