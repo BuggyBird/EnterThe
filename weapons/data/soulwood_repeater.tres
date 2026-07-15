@@ -4,6 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://xsvudpmy50to" path="res://projectiles/projectile.tscn" id="2"]
 [ext_resource type="Resource" path="res://projectiles/data/soul_bolt.tres" id="3"]
 [ext_resource type="Texture2D" uid="uid://bw1t2wwqwdrx8" path="res://Assets/weapons/Funny/crossbow.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://crbfavjmxbju0" path="res://Assets/weapons/Funny/crossbow_charge_1.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://co7piph0kq1l0" path="res://Assets/weapons/Funny/crossbow_charge_2.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://2p0q70aylerg" path="res://Assets/weapons/Funny/crossbow_charge_3.png" id="7"]
 
 [resource]
 script = ExtResource("1")
@@ -17,9 +20,11 @@ auto = false
 spread_degrees = 4.0
 charge_max_shots = 7
 charge_time_per_shot = 0.25
+draw_frames = Array[Texture2D]([ExtResource("5"), ExtResource("6"), ExtResource("7")])
+idle_sway = 1.0
 reload_time = 1.7
 max_reserve = 48
 color = Color(0.61952, 0.8225146, 0.80727893, 1)
 sprite = ExtResource("4")
-sprite_scale = 3.0
+sprite_scale = 2.5
 tags = Array[StringName]([&"spectral", &"bow", &"charge"])

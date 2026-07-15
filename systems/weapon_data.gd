@@ -38,6 +38,16 @@ extends Resource
 ## once, then wraps. Missing repeats the same throw (bonerang).
 @export var curve_combo: bool = false
 
+@export_group("Animation")
+## Wind-up frames for channel/charge weapons: while drawing or charging, the held
+## sprite steps through these (last frame = fully wound); at rest it shows `sprite`.
+@export var draw_frames: Array[Texture2D] = []
+## Thrown weapons: the held sprite does a quick flourish spin each time it fires.
+@export var fire_spin: bool = false
+## Amplitude (px) of the held sprite's gentle idle bob, so the weapon never sits
+## frozen in the hand. 0 = perfectly still.
+@export var idle_sway: float = 0.0
+
 @export_group("Ammo")
 @export var mag_size: int = 12            ## Shots per clip before reloading.
 @export var reload_time: float = 1.0      ## Seconds to reload.

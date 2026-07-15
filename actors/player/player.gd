@@ -52,7 +52,7 @@ var aim_direction := Vector2.RIGHT
 ## False while a roll is on cooldown.
 var can_roll := true
 
-@onready var sprite: Sprite2D = $Sprite
+@onready var sprite: AnimatedSprite2D = $Sprite
 @onready var aim_pivot: Node2D = $AimPivot
 @onready var muzzle: Marker2D = $AimPivot/Muzzle
 @onready var aim_ray: RayCast2D = $AimPivot/AimRay
@@ -68,6 +68,10 @@ const CHARGE_GROW := 0.25
 const CHANNEL_PULL := 6.0
 ## Aim laser opacity — subtle on purpose, so projectiles stay readable over it.
 const AIM_LINE_ALPHA := 0.22
+## How long a thrown weapon's flourish spin takes to settle (s).
+const SPIN_TIME := 0.3
+## Held-sprite jitter at full charge (px) — the weapon strains to hold the salvo.
+const TREMBLE_MAX := 1.6
 
 ## The scene's designed sprite scale; each weapon's `sprite_scale` multiplies this.
 var _base_weapon_scale := Vector2.ONE
@@ -75,6 +79,10 @@ var _base_weapon_scale := Vector2.ONE
 var _base_weapon_pos := Vector2.ZERO
 ## Current backward recoil displacement, decaying to 0 each frame.
 var _recoil := 0.0
+## Clock driving the held weapon's idle sway and charge tremble.
+var _sway_time := 0.0
+## Remaining flourish-spin angle (radians) after a throw, unwinding to 0.
+var _spin := 0.0
 
 ## The player's radial light + its half-texture size (for radius -> scale), and a
 ## clock driving the flicker.
@@ -195,6 +203,10 @@ func _update_aim() -> void:
 	if to_mouse.length_squared() > 0.001:
 		aim_direction = to_mouse.normalized()
 		aim_pivot.rotation = aim_direction.angle()
+		# The body faces the cursor too (twin-stick style), not the walk direction —
+		# except mid-dodge, where the tumble keeps the roll's committed direction.
+		if sprite.animation != &"dodge":
+			sprite.flip_h = aim_direction.x < 0.0
 		update_weapon_flip()
 		update_aim_line()
 
@@ -235,24 +247,58 @@ func _on_weapon_equipped(data: WeaponData) -> void:
 
 
 ## Register a fresh recoil kick when the weapon fires; capped so holding an
-## automatic doesn't walk the gun off the player.
+## automatic doesn't walk the gun off the player. Thrown weapons flourish-spin
+## in the hand instead of just kicking back.
 func _on_weapon_fired() -> void:
 	_recoil = minf(_recoil + recoil_kick, recoil_max)
+	var data: WeaponData = weapon_holder.get_current_data()
+	if data != null and data.fire_spin:
+		_spin = TAU
 
 
 ## Ease the held weapon back to rest each frame. The kick pushes it along the aim
 ## pivot's -x (back toward the player) plus a small muzzle-rise tilt, signed by the
 ## flip so it reads correctly whether aiming left or right. A channel weapon's
-## draw adds its own pull-back so the bow visibly winds up before loosing.
+## draw adds its own pull-back so the bow visibly winds up before loosing. On top
+## of that: an idle bob (idle_sway), a strain tremble while a charge is banked,
+## a flourish spin after a throw (fire_spin), and the wind-up frame swap.
 func _update_recoil(delta: float) -> void:
 	_recoil = maxf(_recoil - recoil_return * delta, 0.0)
-	var pull := _recoil
+	_sway_time += delta
+	_spin = maxf(_spin - TAU / SPIN_TIME * delta, 0.0)
 	var weapon: Weapon = weapon_holder.weapon
-	if weapon != null and weapon.data != null and weapon.data.channel_time > 0.0:
+	var data: WeaponData = weapon.data if weapon != null else null
+	var wind := 0.0
+	if weapon != null:
+		wind = maxf(weapon.channel_ratio(), weapon.charge_ratio())
+	var pull := _recoil
+	if data != null and data.channel_time > 0.0:
 		pull += CHANNEL_PULL * weapon.channel_ratio()
-	weapon_sprite.position = _base_weapon_pos - Vector2(pull, 0.0)
+	var offset := Vector2(-pull, 0.0)
+	if data != null and data.idle_sway > 0.0:
+		# Two out-of-phase sines make an organic bob, perpendicular to the aim.
+		offset.y += data.idle_sway * (sin(_sway_time * 2.1) * 0.7 + sin(_sway_time * 3.7 + 1.3) * 0.3)
+	if weapon != null and weapon.is_chargeable() and wind > 0.0:
+		# Deterministic high-frequency wobble (no RNG draws for cosmetics).
+		offset += Vector2(sin(_sway_time * 61.0), cos(_sway_time * 47.0)) * TREMBLE_MAX * wind
+	weapon_sprite.position = _base_weapon_pos + offset
 	var tilt_sign := 1.0 if weapon_sprite.flip_v else -1.0
-	weapon_sprite.rotation = tilt_sign * _recoil * recoil_tilt
+	weapon_sprite.rotation = tilt_sign * (_recoil * recoil_tilt - _spin)
+	_update_draw_frame(data, wind)
+
+
+## Step the held sprite through the weapon's wind-up frames as the draw/charge
+## builds; back to the rest sprite the moment the shot looses. Frame N of the
+## array is full wind, so a 3-frame set switches at 1/3 and 2/3.
+func _update_draw_frame(data: WeaponData, wind: float) -> void:
+	if data == null or data.draw_frames.is_empty():
+		return
+	var tex: Texture2D = data.sprite
+	if wind > 0.0:
+		var i := clampi(int(ceil(wind * data.draw_frames.size())) - 1, 0, data.draw_frames.size() - 1)
+		tex = data.draw_frames[i]
+	if weapon_sprite.texture != tex:
+		weapon_sprite.texture = tex
 
 
 ## Current WASD/arrow movement intent as a (possibly zero) unit-ish vector.

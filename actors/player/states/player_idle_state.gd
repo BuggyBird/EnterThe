@@ -4,6 +4,10 @@ extends State
 @onready var player: Player = owner
 
 
+func enter() -> void:
+	player.sprite.play(&"idle")
+
+
 func physics_update(delta: float) -> void:
 	player.apply_friction(player.friction, delta)
 	if player.get_move_input() != Vector2.ZERO:
