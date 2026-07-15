@@ -18,7 +18,13 @@ func enter() -> void:
 	player.start_roll_cooldown()
 	player.set_invulnerable(true)  # i-frames: untouchable during the roll
 	EventBus.player_dodged.emit()
-	# Placeholder feedback until real animation/VFX exist: fade during the roll.
+	# Tuck-and-tumble sprite animation, paced to finish with the roll. The tumble
+	# mirrors by roll direction (not aim); _update_aim leaves the flip alone while
+	# the dodge anim plays and takes back over on exit.
+	player.sprite.play(&"dodge")
+	if _roll_direction.x != 0.0:
+		player.sprite.flip_h = _roll_direction.x < 0.0
+	# The whole-body fade marks the i-frames, so dodging reads as untouchable.
 	player.modulate = Color(1.0, 1.0, 1.0, 0.55)
 
 

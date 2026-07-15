@@ -4,6 +4,10 @@ extends State
 @onready var player: Player = owner
 
 
+func enter() -> void:
+	player.sprite.play(&"walk")
+
+
 func physics_update(delta: float) -> void:
 	var direction := player.get_move_input()
 	if direction == Vector2.ZERO:

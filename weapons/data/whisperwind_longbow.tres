@@ -4,6 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://xsvudpmy50to" path="res://projectiles/projectile.tscn" id="2"]
 [ext_resource type="Resource" uid="uid://bj0vcpu83b7f0" path="res://projectiles/data/spectral_arrow.tres" id="3"]
 [ext_resource type="Texture2D" uid="uid://cjo5ircdfqfkg" path="res://Assets/weapons/Funny/longbow.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://c0nnilrohkqrf" path="res://Assets/weapons/Funny/longbow_draw_1.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://bqqlet4k61oas" path="res://Assets/weapons/Funny/longbow_draw_2.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://cfd4230e4x3jj" path="res://Assets/weapons/Funny/longbow_draw_3.png" id="7"]
 
 [resource]
 script = ExtResource("1")
@@ -15,6 +18,8 @@ projectile_data = ExtResource("3")
 fire_rate = 1.2
 auto = false
 channel_time = 0.6
+draw_frames = Array[Texture2D]([ExtResource("5"), ExtResource("6"), ExtResource("7")])
+idle_sway = 1.2
 mag_size = 8
 reload_time = 1.6
 max_reserve = 40
