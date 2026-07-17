@@ -21,6 +21,7 @@ EventBus="*res://autoload/event_bus.gd"
 RNG="*res://autoload/rng_manager.gd"
 GameState="*res://autoload/game_state.gd"
 Upgrades="*res://autoload/upgrades.gd"
+Stages="*res://autoload/stages.gd"
 
 [display]
 

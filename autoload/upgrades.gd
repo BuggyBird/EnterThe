@@ -7,6 +7,7 @@ extends Node
 ##   - Projectile: damage_mult, bullet_size_mult, bullet_speed_mult, bounces, pierce_bonus
 ##   - Weapon:     fire_rate_mult
 ##   - Player:     move_speed_mult (and vitality applied on spawn)
+##   - Coin:       coin_magnet_mult (scales the coin pickup magnet radius)
 ## Wiped by reset() when a new run starts (RunManager, later milestone).
 
 const XP_PER_KILL := 25
@@ -55,6 +56,7 @@ var bullet_size_mult := 1.0
 var bullet_speed_mult := 1.0
 var fire_rate_mult := 1.0
 var move_speed_mult := 1.0
+var coin_magnet_mult := 1.0
 var bounces := 0
 var pierce_bonus := 0
 
@@ -76,6 +78,7 @@ func reset() -> void:
 	bullet_speed_mult = 1.0
 	fire_rate_mult = 1.0
 	move_speed_mult = 1.0
+	coin_magnet_mult = 1.0
 	bounces = 0
 	pierce_bonus = 0
 	_stacks.clear()

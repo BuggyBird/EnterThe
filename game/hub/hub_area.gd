@@ -134,4 +134,5 @@ func _on_portal_entered(body: Node2D) -> void:
 		return
 	_started = true
 	Upgrades.reset()
+	Stages.start_run()
 	get_tree().change_scene_to_file.call_deferred(DUNGEON_SCENE)

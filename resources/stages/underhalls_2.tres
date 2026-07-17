@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="StageDef" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/stages/stage_def.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/stages/underhalls_3.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"underhalls_2"
+display_name = "Underhalls"
+stage_number = 2
+next_default = ExtResource("2")
