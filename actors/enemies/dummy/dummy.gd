@@ -4,7 +4,7 @@ extends Node2D
 ## feedback -> death) before real enemies arrive in Milestone 4. It composes the
 ## same HealthComponent / HurtboxComponent / HealthBar2D that enemies will use.
 
-@onready var sprite: Sprite2D = $Sprite
+@onready var sprite: AnimatedSprite2D = $Sprite
 @onready var health: HealthComponent = $Health
 @onready var hurtbox: HurtboxComponent = $Hurtbox
 @onready var health_bar: HealthBar2D = $HealthBar
@@ -21,6 +21,9 @@ func _ready() -> void:
 	health.damaged.connect(_on_damaged)
 	health.died.connect(_on_died)
 	_base_color = sprite.modulate
+	# Same shared rat animations the real monsters use; a dummy just idles.
+	sprite.sprite_frames = RatFrames.frames()
+	sprite.play(&"idle")
 
 
 func _on_damaged(info: DamageInfo) -> void:

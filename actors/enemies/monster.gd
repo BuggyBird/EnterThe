@@ -9,7 +9,7 @@ extends CharacterBody2D
 
 @export var data: MonsterData
 
-@onready var sprite: Sprite2D = $Sprite
+@onready var sprite: AnimatedSprite2D = $Sprite
 @onready var health: HealthComponent = $Health
 @onready var hurtbox: HurtboxComponent = $Hurtbox
 @onready var health_bar: HealthBar2D = $HealthBar
@@ -36,6 +36,10 @@ func _ready() -> void:
 		sprite.modulate = data.tint
 		scale *= data.body_scale
 	_base_color = sprite.modulate
+	# The rat sheet sliced into walk/idle/shoot cycles, shared by every monster.
+	sprite.sprite_frames = RatFrames.frames()
+	sprite.play(&"idle")
+	sprite.frame = RNG.randi_range(0, sprite.sprite_frames.get_frame_count(&"idle") - 1)
 	# Stagger first attacks/steps so a room of monsters doesn't act in sync.
 	_cooldown = RNG.randf_range(0.4, 1.2)
 	_pause_timer = RNG.randf_range(0.1, 0.6)
@@ -52,6 +56,7 @@ func _physics_process(delta: float) -> void:
 	var to_player: Vector2 = player.global_position - global_position
 	var dist := to_player.length()
 	sprite.flip_h = to_player.x < 0.0
+	_update_anim()
 
 	if _windup > 0.0:
 		# Committed to the shot: stand still and finish the telegraph.
@@ -112,6 +117,27 @@ func _fire(aim: Vector2) -> void:
 		projectile.setup(data.projectile_data, dir, global_position)
 		projectile.friendly = false
 		get_tree().current_scene.add_child(projectile)
+
+
+## Pick the animation for the current AI beat: telegraphing -> "shoot", mid
+## walk-burst -> "walk", planted between bursts -> "idle". The shoot anim is
+## stretched to the monster's windup_time so its final (airborne) lunge frame
+## lands exactly when the shot fires — at a fixed speed, long-windup types
+## (the green plague rat) froze mid-lunge and looked like they were floating.
+func _update_anim() -> void:
+	var anim: StringName = &"idle"
+	if _windup > 0.0:
+		anim = &"shoot"
+	elif _pause_timer <= 0.0:
+		anim = &"walk"
+	if sprite.animation != anim:
+		if anim == &"shoot" and data != null and data.windup_time > 0.0:
+			var base_duration := sprite.sprite_frames.get_frame_count(&"shoot") \
+				/ sprite.sprite_frames.get_animation_speed(&"shoot")
+			sprite.speed_scale = base_duration / data.windup_time
+		else:
+			sprite.speed_scale = 1.0
+		sprite.play(anim)
 
 
 ## Don't shoot (or start telegraphing) through walls.

@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://ceacotgfmmp6"]
 
 [ext_resource type="Script" path="res://actors/enemies/monster.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://mdold2xcw8ne" path="res://Assets/Mobs/rat base v2-Sheet.png" id="2"]
 [ext_resource type="Script" uid="uid://h4qmk4yy0tu5" path="res://components/health_component.gd" id="3"]
 [ext_resource type="Script" uid="uid://d2plnq68pv1fi" path="res://components/hurtbox_component.gd" id="4"]
 [ext_resource type="Script" uid="uid://corjpyuee5tsr" path="res://components/health_bar_2d.gd" id="5"]
@@ -17,12 +16,9 @@ collision_layer = 4
 motion_mode = 1
 script = ExtResource("1")
 
-[node name="Sprite" type="Sprite2D" parent="." unique_id=696947788]
-position = Vector2(0, -3)
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=696947788]
+position = Vector2(0, -10)
 scale = Vector2(1.5, 1.5)
-texture = ExtResource("2")
-region_enabled = true
-region_rect = Rect2(14, 21, 31, 31)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1793061227]
 shape = SubResource("CircleShape2D_body")
