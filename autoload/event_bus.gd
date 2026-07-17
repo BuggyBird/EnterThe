@@ -38,6 +38,8 @@ signal chest_opened(rarity: int)       ## A chest was paid for and is opening.
 signal room_entered(room: Node)
 signal room_cleared(room: Node)
 signal floor_generated(floor_index: int)
+signal stage_started(display_name: String, stage_number: int)  ## A stage's floor is built and playable.
+signal stage_portal_entered()  ## Player stepped into the boss portal to the next stage.
 
 # --- Map ----------------------------------------------------------------------
 ## A fresh floor's layout, for the minimap. `rooms` = Array of

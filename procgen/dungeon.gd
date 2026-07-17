@@ -64,6 +64,11 @@ var _map_corridors: Array = []   ## {"a", "b"} world door-mouths, for the minima
 
 func _ready() -> void:
 	_setup_darkness()
+	# The boss portal advances the run: next StageDef, then a fresh floor. The
+	# rebuild is deferred — the signal fires from a body_entered physics callback.
+	EventBus.stage_portal_entered.connect(func() -> void:
+		Stages.advance()
+		generate.call_deferred())
 	generate()
 
 
@@ -82,8 +87,12 @@ func _process(_delta: float) -> void:
 		generate()
 
 
-## Build a fresh floor from scratch (new random seed each time).
+## Build a fresh floor from scratch (new random seed each time). The floor
+## belongs to Stages.current; entering the boss portal advances the stage and
+## calls this again, so every stage is built by the same path as the first.
 func generate() -> void:
+	if Stages.current == null:
+		Stages.start_run()   # dungeon.tscn launched directly, without the hub
 	_clear_floor()
 	RNG.randomize_seed()
 	if catalog == null:
@@ -107,7 +116,8 @@ func generate() -> void:
 	_build_corridors(result)
 	_spawn_player(result)
 	EventBus.map_generated.emit(_map_rooms, _map_corridors)
-	EventBus.floor_generated.emit(0)
+	EventBus.floor_generated.emit(Stages.current.stage_number)
+	EventBus.stage_started.emit(Stages.current.display_name, Stages.current.stage_number)
 
 
 ## Probe each catalog scene once to extract its size + door anchors as pure data

@@ -2,12 +2,17 @@ class_name Coin
 extends Area2D
 ## A dropped gold coin. Scatters outward from where the enemy died, skids to a
 ## stop, and is collected by the player walking over it. Feeds GameState.gold.
+## A small magnet homes the coin onto the player once they come close; its
+## reach scales with Upgrades.coin_magnet_mult so augments/items can grow it.
 
 @export var value := 5
 @export var scatter_speed_min := 50.0
 @export var scatter_speed_max := 130.0
 @export var friction := 260.0
 @export var lifetime := 25.0   ## Despawn eventually so long fights don't litter.
+@export var pull_radius := 48.0    ## Base magnet reach (px); scaled by Upgrades.coin_magnet_mult.
+@export var pull_speed := 340.0    ## Top homing speed (px/s) — faster than the player walks.
+@export var pull_accel := 1400.0   ## How quickly the pull ramps up (px/s^2).
 
 var _vel := Vector2.ZERO
 ## Float position, drawn rounded so the tiny sprite never shimmers sub-pixel.
@@ -36,7 +41,14 @@ func _physics_process(delta: float) -> void:
 	if _age >= lifetime:
 		queue_free()
 		return
-	_vel = _vel.move_toward(Vector2.ZERO, friction * delta)
+	var player := get_tree().get_first_node_in_group(&"player") as Node2D
+	if player != null \
+			and _pos.distance_to(player.global_position) <= pull_radius * Upgrades.coin_magnet_mult:
+		# In magnet range: home onto the player, overriding the scatter skid.
+		var dir := _pos.direction_to(player.global_position)
+		_vel = _vel.move_toward(dir * pull_speed, pull_accel * delta)
+	else:
+		_vel = _vel.move_toward(Vector2.ZERO, friction * delta)
 	_pos += _vel * delta
 	global_position = _pos.round()
 

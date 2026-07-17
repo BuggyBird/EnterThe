@@ -91,6 +91,7 @@ var _gate_map: TileMapLayer       ## The tilemap doors are painted onto (tiled r
 var _gates: Array = []            ## Per used door: {"cells": Array[Vector2i], "tiles": Array[Vector2i]}.
 var _portals: Array = []          ## Animated portal (Node2D) per not-yet-crossed used door.
 var _doors_locked := false        ## Mirrors _set_doors_locked, guards portal removal.
+var _last_death_pos := Vector2.ZERO   ## Room-local spot of the latest kill (boss rewards).
 
 
 func _ready() -> void:
@@ -589,7 +590,7 @@ func _begin_encounter() -> void:
 			var hc: HealthComponent = enemy.get_node("Health")
 			hc.max_health = 220.0
 			hc.current_health = 220.0
-		enemy.get_node("Health").died.connect(_on_enemy_died)
+		enemy.get_node("Health").died.connect(_on_enemy_died.bind(enemy))
 		_alive_enemies += 1
 
 	if _alive_enemies == 0:
@@ -621,7 +622,10 @@ func _free_spawn_position(local_pos: Vector2, radius: float) -> Vector2:
 	return local_pos
 
 
-func _on_enemy_died() -> void:
+func _on_enemy_died(enemy: Node2D) -> void:
+	# Remember where the last enemy fell: in a boss room that's the boss, and
+	# its corpse marks where the rewards (weapon + stage portal) appear.
+	_last_death_pos = enemy.position
 	_alive_enemies -= 1
 	if _alive_enemies <= 0:
 		_clear_room()
@@ -631,6 +635,23 @@ func _clear_room() -> void:
 	is_cleared = true
 	_set_doors_locked(false)
 	EventBus.room_cleared.emit(self)
+	if type == DungeonGenerator.RoomType.BOSS:
+		# Deferred: died fires mid-physics-flush, and both rewards are Area2Ds.
+		_spawn_boss_rewards.call_deferred(_last_death_pos)
+
+
+## The boss pays out twice at its death spot: a weapon (the kill reward) laid
+## beside the corpse, and — unless this stage is the campaign's final one — the
+## purple portal onward to the next stage in the story graph.
+func _spawn_boss_rewards(at: Vector2) -> void:
+	var pickup: Node2D = load(PICKUP_SCENE).instantiate()
+	pickup.weapon_data = load(RNG.pick(TREASURE_POOL))
+	pickup.position = at + Vector2(-44.0, 0.0)
+	add_child(pickup)
+	if Stages.current == null or not Stages.current.is_final:
+		var portal := StagePortal.new()
+		portal.position = at
+		add_child(portal)
 
 
 func _spawn_treasure() -> void:
