@@ -29,7 +29,7 @@ const MAX_ATTEMPTS := 24   ## Rerolls allowed before accepting a best-effort flo
 ## (and any others) brighten areas back up. Raise toward white for a brighter dungeon,
 ## lower toward black for a pitch-dark one. UI lives on separate CanvasLayers, so only
 ## the world is dimmed.
-@export var dark_ambient := Color(0.16, 0.15, 0.22)
+@export var dark_ambient := Color(0.11, 0.10, 0.16)
 var _canvas_modulate: CanvasModulate
 
 @export_group("Corridor floor tiles")

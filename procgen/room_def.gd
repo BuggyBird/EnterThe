@@ -48,6 +48,14 @@ const MONSTER_POOL := [
 ]
 const PICKUP_SCENE := "res://weapons/pickup/weapon_pickup.tscn"
 const CHEST_SCENE := "res://items/chest/chest.tscn"
+
+## Wall torches: mounted automatically along the top wall of every room, evenly
+## spaced and clear of the doorways. Each is a small DIM light; together they
+## layer into natural-feeling wall light (see torch.gd).
+const TORCH_SCENE := "res://rooms/decoration/torch.tscn"
+const TORCH_SPACING := 96.0          ## ~6 tiles between sconces.
+const TORCH_DOOR_CLEARANCE := 28.0   ## Extra gap beyond the door half-width.
+const TORCH_Z := 2                   ## Above the wall art, below the portals.
 const TREASURE_POOL := [
 	#"res://weapons/data/gravedigger.tres",
 	#"res://weapons/data/wisp.tres",
@@ -121,6 +129,7 @@ func _build() -> void:
 	_tilemap_collision = _prepare_tilemap_collision()
 	_build_walls()
 	_build_portals()
+	_build_torches()
 	_build_interior_detector()
 	_collect_spawn_points()
 	_hide_until_discovered()
@@ -406,6 +415,52 @@ func _on_portal_crossed(body: Node2D, portal: Node2D) -> void:
 		return
 	_portals.erase(portal)
 	portal.queue_free()
+
+
+# --- Wall torches ---------------------------------------------------------------
+
+## Sconces along the top wall, evenly spread and skipping the doorways. On tiled
+## rooms each torch finds the REAL wall face in its column (first floor tile from
+## the top, sconce on the cell above), so it works for any authored layout;
+## plain rooms fall back to the declared top edge.
+func _build_torches() -> void:
+	var count := maxi(1, int(room_size.x / TORCH_SPACING))
+	for i in count:
+		var x := -_half.x + room_size.x * (float(i) + 0.5) / float(count)
+		if _near_top_door(x):
+			continue
+		var y := _torch_wall_y(x)
+		if is_nan(y):
+			continue
+		var torch: Node2D = load(TORCH_SCENE).instantiate()
+		torch.position = Vector2(x, y)
+		torch.z_index = TORCH_Z
+		add_child(torch)
+
+
+## Whether a top-wall x sits too close to any authored door on that wall.
+func _near_top_door(x: float) -> bool:
+	for door in _exits:
+		if door["dir"] == Vector2i.UP \
+				and absf((door["pos"] as Vector2).x - x) < DOOR_WIDTH * 0.5 + TORCH_DOOR_CLEARANCE:
+			return true
+	return false
+
+
+## Room-local y where a torch mounts in this column: the centre of the wall-face
+## cell directly above the column's highest floor tile. NAN = no floor here
+## (column outside the painted art), so no torch.
+func _torch_wall_y(x: float) -> float:
+	var tml := _find_floor_map()
+	if tml == null:
+		return -_half.y - 6.0
+	var cell := Vector2(tml.tile_set.tile_size)
+	var col := tml.local_to_map(Vector2(x, 0.0) - tml.position).x
+	var used: Rect2i = tml.get_used_rect()
+	for row in range(used.position.y, used.end.y):
+		if tml.get_cell_atlas_coords(Vector2i(col, row)) in FLOOR_TILES:
+			return tml.position.y + (float(row) - 0.5) * cell.y
+	return NAN
 
 
 # --- Perimeter geometry -------------------------------------------------------

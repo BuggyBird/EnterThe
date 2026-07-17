@@ -28,8 +28,10 @@ extends CharacterBody2D
 ## is read every frame, so changing it at runtime (a torch upgrade, a pickup, a
 ## flicker, fading out on death) grows or shrinks the lit circle live.
 @export var light_enabled := true
-@export var light_radius := 240.0                       ## Radius of the lit circle (px).
-@export var light_energy := 1.25                        ## Brightness of the light.
+## Deliberately modest: the wall torches carry the room's mood lighting, the
+## player's circle is just working vision around the avatar.
+@export var light_radius := 190.0                       ## Radius of the lit circle (px).
+@export var light_energy := 0.95                        ## Brightness of the light.
 @export var light_color := Color(1.0, 0.93, 0.78)       ## Warm torch tint.
 ## Organic wobble so the circle breathes over time. Kept small/slow so it's a gentle
 ## breathe, not a vibration. 0 = perfectly steady.
